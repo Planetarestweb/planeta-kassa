@@ -143,4 +143,3 @@ app.get('/api/export/csv', async (req, res) => {
 init().then(() => {
   app.listen(PORT, () => console.log(`Касса Планета запущена на порту ${PORT}`));
 }).catch(console.error);
-});
