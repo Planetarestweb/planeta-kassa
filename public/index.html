@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🪐 Касса — Планета</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f10; --bg2: #1a1a1c; --bg3: #242426;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0; --text2: #9a9a9f; --text3: #5a5a60;
+    --accent: #7f77dd; --accent-bg: rgba(127,119,221,0.15);
+    --red: #e24b4a; --red-bg: rgba(226,75,74,0.12);
+    --pink: #c0608a;
+    --r: 10px; --rl: 14px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .app { max-width: 980px; margin: 0 auto; padding: 1rem 0.875rem 4rem; }
+
+  .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .logo { font-size: 18px; font-weight: 600; }
+  .logo em { color: var(--accent); font-style: normal; }
+  .shift-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .hdr-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 6px 11px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg2); color: var(--text2); cursor: pointer; transition: all 0.13s; white-space: nowrap; font-family: inherit; }
+  .chip:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+  .chip:active { transform: scale(0.96); }
+  .chip.red { color: var(--red); border-color: rgba(226,75,74,0.3); }
+  .chip.red:hover { background: var(--red-bg); }
+  .chip:disabled { opacity: 0.3; pointer-events: none; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 7px; margin-bottom: 1rem; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 0.7rem 0.85rem; }
+  .stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+  .stat-val { font-size: 19px; font-weight: 600; letter-spacing: -0.5px; }
+  .stat.hi .stat-val { color: var(--accent); }
+
+  .tabs { display: flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 3px; width: fit-content; margin-bottom: 1rem; }
+  .tab { font-size: 13px; padding: 6px 15px; border-radius: 8px; cursor: pointer; background: none; border: none; color: var(--text2); font-family: inherit; transition: all 0.13s; }
+  .tab.on { background: var(--bg3); color: var(--text); font-weight: 500; }
+  .panel { display: none; }
+  .panel.on { display: block; }
+
+  /* SERVICE GROUPS */
+  .svc-groups { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+  .svc-group { display: flex; flex-direction: column; gap: 5px; }
+  .grp-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 2px; }
+  .svc-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+
+  .svc-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 0.85rem 0.8rem; cursor: pointer; text-align: left; position: relative; display: flex; flex-direction: column; gap: 3px; font-family: inherit; transition: all 0.12s; }
+  .svc-btn:hover { border-color: var(--border2); background: var(--bg3); }
+  .svc-btn:active { transform: scale(0.955); }
+  .svc-btn.birthday { border-color: rgba(192,96,138,0.3); }
+  .svc-btn.birthday:hover { border-color: rgba(192,96,138,0.55); background: rgba(192,96,138,0.07); }
+  .s-ico { font-size: 18px; margin-bottom: 1px; }
+  .s-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
+  .s-price { font-size: 12px; color: var(--text2); }
+  .s-badge { position: absolute; top: 8px; right: 9px; background: var(--accent-bg); color: var(--accent); font-size: 11px; font-weight: 600; min-width: 21px; height: 21px; border-radius: 11px; display: flex; align-items: center; justify-content: center; padding: 0 5px; border: 1px solid rgba(127,119,221,0.25); }
+  .svc-btn.birthday .s-badge { background: rgba(192,96,138,0.15); color: var(--pink); border-color: rgba(192,96,138,0.3); }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); overflow: hidden; }
+  .card-hd { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
+  .card-hd .act { font-size: 12px; color: var(--text3); cursor: pointer; font-weight: 400; }
+  .card-hd .act:hover { color: var(--text2); }
+
+  .log-scroll { max-height: 220px; overflow-y: auto; }
+  .log-row { display: flex; align-items: center; gap: 9px; padding: 0.48rem 1rem; border-bottom: 1px solid var(--border); }
+  .log-row:last-child { border-bottom: none; }
+  .log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .log-name { font-size: 13px; flex: 1; }
+  .log-amt { font-size: 13px; font-weight: 500; min-width: 65px; text-align: right; }
+  .log-t { font-size: 11px; color: var(--text3); min-width: 36px; text-align: right; }
+  .empty { padding: 1.5rem; text-align: center; font-size: 13px; color: var(--text3); }
+
+  .rep-section-title { padding: 0.42rem 1rem; background: var(--bg3); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+  .rep-row { display: flex; align-items: center; padding: 0.55rem 1rem; border-bottom: 1px solid var(--border); gap: 8px; }
+  .rep-ico { font-size: 15px; width: 22px; flex-shrink: 0; }
+  .rep-name { font-size: 13px; flex: 1; }
+  .rep-cnt { font-size: 12px; color: var(--text3); min-width: 46px; text-align: right; }
+  .rep-sum { font-size: 13px; font-weight: 500; min-width: 78px; text-align: right; }
+  .rep-total { display: flex; justify-content: space-between; padding: 0.8rem 1rem; background: var(--bg3); font-weight: 600; font-size: 14px; border-top: 1px solid var(--border2); }
+
+  .sh-row { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+  .sh-row:last-child { border-bottom: none; }
+  .sh-row:hover { background: var(--bg3); }
+  .sh-row.selected { background: var(--bg3); border-left: 2px solid var(--accent); padding-left: calc(1rem - 2px); }
+  .sh-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .sh-date { font-size: 13px; font-weight: 500; }
+  .sh-rev { font-size: 15px; font-weight: 600; color: var(--accent); }
+  .sh-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .sh-detail { margin-top: 0.85rem; }
+  .sh-detail-hd { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
+  .sh-close { font-size: 20px; cursor: pointer; color: var(--text3); line-height: 1; padding: 0 4px; }
+  .sh-close:hover { color: var(--text2); }
+
+  .bottom { margin-top: 0.85rem; }
+  .btn-full { width: 100%; padding: 0.7rem; font-size: 13px; background: none; border: 1px solid var(--border2); border-radius: var(--r); cursor: pointer; color: var(--text2); font-family: inherit; transition: all 0.13s; }
+  .btn-full:hover { background: var(--bg3); color: var(--text); }
+
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.3)} 100%{transform:scale(1);opacity:1} }
+  .pop { animation: pop 0.28s ease; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text2); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 100; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  @media (max-width: 480px) {
+    .svc-row { grid-template-columns: repeat(2, 1fr); }
+    .stats { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div>
+      <div class="logo">🪐 <em>Планета</em> — Касса</div>
+      <div class="shift-meta" id="shiftMeta">Загрузка...</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="chip red" id="undoBtn" onclick="undoLast()" disabled>↩ Отменить</button>
+      <button class="chip" onclick="exportCSV()">⬇ CSV</button>
+      <button class="chip" onclick="fetchState()">↻</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat hi"><div class="stat-lbl">Выручка</div><div class="stat-val" id="sRev">—</div></div>
+    <div class="stat"><div class="stat-lbl">Продаж</div><div class="stat-val" id="sCnt">—</div></div>
+    <div class="stat"><div class="stat-lbl">Входы</div><div class="stat-val" id="sVhod">—</div></div>
+    <div class="stat"><div class="stat-lbl">Жетоны</div><div class="stat-val" id="sZh">—</div></div>
+    <div class="stat"><div class="stat-lbl">Аттракционы</div><div class="stat-val" id="sAttr">—</div></div>
+    <div class="stat"><div class="stat-lbl">Именинники</div><div class="stat-val" id="sBday">—</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tab-cash" onclick="sw('cash')">Касса</button>
+    <button class="tab" id="tab-report" onclick="sw('report')">Отчёт</button>
+    <button class="tab" id="tab-shifts" onclick="sw('shifts')">Смены</button>
+  </div>
+
+  <!-- КАССА -->
+  <div class="panel on" id="panel-cash">
+    <div class="svc-groups">
+
+      <div class="svc-group">
+        <div class="grp-label">Основные</div>
+        <div class="svc-row">
+          <button class="svc-btn" onclick="sell('vhod')">
+            <div class="s-ico">🎪</div><div class="s-name">Вход в клуб</div><div class="s-price">500 ₽</div>
+            <div class="s-badge" id="b_vhod">0</div>
+          </button>
+          <button class="svc-btn" onclick="sell('zh1')">
+            <div class="s-ico">🪙</div><div class="s-name">Жетон ×1</div><div class="s-price">50 ₽</div>
+            <div class="s-badge" id="b_zh1">0</div>
+          </button>
+          <button class="svc-btn" onclick="sell('zh4')">
+            <div class="s-ico">🪙</div><div class="s-name">Жетоны ×4</div><div class="s-price">200 ₽</div>
+            <div class="s-badge" id="b_zh4">0</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="svc-group">
+        <div class="grp-label">Аттракционы</div>
+        <div class="svc-row">
+          <button class="svc-btn" onclick="sell('vr')">
+            <div class="s-ico">🥽</div><div class="s-name">VR шлем</div><div class="s-price">300 ₽</div>
+            <div class="s-badge" id="b_vr">0</div>
+          </button>
+          <button class="svc-btn" onclick="sell('c7d')">
+            <div class="s-ico">🎬</div><div class="s-name">7D кинотеатр</div><div class="s-price">150 ₽</div>
+            <div class="s-badge" id="b_c7d">0</div>
+          </button>
+          <button class="svc-btn" onclick="sell('ps')">
+            <div class="s-ico">🎮</div><div class="s-name">PlayStation</div><div class="s-price">300 ₽</div>
+            <div class="s-badge" id="b_ps">0</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="svc-group">
+        <div class="grp-label">Именинники (бесплатно)</div>
+        <div class="svc-row">
+          <button class="svc-btn birthday" onclick="sell('bday_vhod')">
+            <div class="s-ico">🎂</div><div class="s-name">Именинник</div><div class="s-price">Бесплатно</div>
+            <div class="s-badge" id="b_bday_vhod">0</div>
+          </button>
+          <button class="svc-btn birthday" onclick="sell('bday_7d')">
+            <div class="s-ico">🎂</div><div class="s-name">7D именинник</div><div class="s-price">Бесплатно</div>
+            <div class="s-badge" id="b_bday_7d">0</div>
+          </button>
+          <button class="svc-btn birthday" onclick="sell('bday_vr')">
+            <div class="s-ico">🎂</div><div class="s-name">VR именинник</div><div class="s-price">Бесплатно</div>
+            <div class="s-badge" id="b_bday_vr">0</div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span>📋 Журнал</span><span class="act" onclick="fetchState()">обновить</span></div>
+      <div class="log-scroll" id="logList"><div class="empty">Нажмите на услугу после оплаты клиента</div></div>
+    </div>
+    <div class="bottom">
+      <button class="btn-full" onclick="endShift()">🔄 Завершить смену</button>
+    </div>
+  </div>
+
+  <!-- ОТЧЁТ -->
+  <div class="panel" id="panel-report">
+    <div class="card" id="reportBox"><div class="empty">Загрузка...</div></div>
+  </div>
+
+  <!-- СМЕНЫ -->
+  <div class="panel" id="panel-shifts">
+    <div class="card" id="shiftsBox"><div class="empty">Загрузка...</div></div>
+    <div class="sh-detail" id="shiftDetail"></div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SVCS = [
+  { id:'vhod',      name:'Вход в клуб',    price:500, icon:'🎪', color:'#1D9E75', group:'vhod' },
+  { id:'zh1',       name:'Жетон ×1',        price:50,  icon:'🪙', color:'#BA7517', group:'zh' },
+  { id:'zh4',       name:'Жетоны ×4',       price:200, icon:'🪙', color:'#BA7517', group:'zh' },
+  { id:'vr',        name:'VR шлем',         price:300, icon:'🥽', color:'#185FA5', group:'attr' },
+  { id:'c7d',       name:'7D кинотеатр',    price:150, icon:'🎬', color:'#185FA5', group:'attr' },
+  { id:'ps',        name:'PlayStation',     price:300, icon:'🎮', color:'#534AB7', group:'attr' },
+  { id:'bday_vhod', name:'Именинник',       price:0,   icon:'🎂', color:'#c0608a', group:'bday' },
+  { id:'bday_7d',   name:'7D именинник',    price:0,   icon:'🎂', color:'#c0608a', group:'bday' },
+  { id:'bday_vr',   name:'VR именинник',    price:0,   icon:'🎂', color:'#c0608a', group:'bday' },
+];
+
+const GROUPS = [
+  { label: 'Основные',     ids: ['vhod','zh1','zh4'] },
+  { label: 'Аттракционы',  ids: ['vr','c7d','ps'] },
+  { label: 'Именинники',   ids: ['bday_vhod','bday_7d','bday_vr'] },
+];
+
+let state = null;
+let selling = false;
+let selectedShiftId = null;
+
+function grp(g) {
+  if (!state) return 0;
+  return SVCS.filter(s => s.group === g).reduce((a, s) => a + (state.counts[s.id] || 0), 0);
+}
+
+async function fetchState() {
+  try {
+    const r = await fetch('/api/state');
+    state = await r.json();
+    renderAll();
+  } catch(e) { toast('Ошибка соединения'); }
+}
+
+async function sell(id) {
+  if (selling) return;
+  const s = SVCS.find(x => x.id === id); if (!s) return;
+  selling = true;
+  try {
+    const r = await fetch('/api/sell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service_id: s.id, service_name: s.name, price: s.price, cashier: '' })
+    });
+    const data = await r.json();
+    if (data.ok) { await fetchState(); animBadge(id); toast('✓ ' + s.name); }
+  } catch(e) { toast('Ошибка'); }
+  selling = false;
+}
+
+async function undoLast() {
+  try {
+    const r = await fetch('/api/sell/last', { method: 'DELETE' });
+    const data = await r.json();
+    if (data.ok) { await fetchState(); toast('↩ Отменено: ' + data.deleted.service_name); }
+    else toast(data.msg);
+  } catch(e) { toast('Ошибка'); }
+}
+
+async function endShift() {
+  if (!confirm('Завершить смену и начать новую?\nВсе данные сохранятся в истории.')) return;
+  try {
+    await fetch('/api/shift/end', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+    selectedShiftId = null;
+    document.getElementById('shiftDetail').innerHTML = '';
+    await fetchState();
+    toast('✓ Смена завершена');
+    sw('cash');
+  } catch(e) { toast('Ошибка'); }
+}
+
+function exportCSV() { window.location.href = '/api/export/csv'; }
+
+function renderStats() {
+  if (!state) return;
+  document.getElementById('sRev').textContent = state.rev.toLocaleString('ru-RU') + ' ₽';
+  document.getElementById('sCnt').textContent = state.cnt;
+  document.getElementById('sVhod').textContent = grp('vhod');
+  document.getElementById('sZh').textContent = grp('zh');
+  document.getElementById('sAttr').textContent = grp('attr');
+  document.getElementById('sBday').textContent = grp('bday');
+  document.getElementById('undoBtn').disabled = !state.sales || !state.sales.length;
+  if (state.shift) {
+    const d = new Date(state.shift.started_at);
+    document.getElementById('shiftMeta').textContent =
+      'Смена с ' + d.toLocaleString('ru-RU', {day:'numeric', month:'long', hour:'2-digit', minute:'2-digit'});
+  }
+}
+
+function renderBadges() {
+  if (!state) return;
+  SVCS.forEach(s => { const el = document.getElementById('b_' + s.id); if (el) el.textContent = state.counts[s.id] || 0; });
+}
+
+function animBadge(id) {
+  const el = document.getElementById('b_' + id); if (!el) return;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+
+function renderLog() {
+  const el = document.getElementById('logList');
+  if (!state || !state.sales || !state.sales.length) {
+    el.innerHTML = '<div class="empty">Нажмите на услугу после оплаты клиента</div>'; return;
+  }
+  el.innerHTML = state.sales.slice().reverse().map(x => {
+    const t = new Date(x.sold_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+    const svc = SVCS.find(s => s.id === x.service_id);
+    return `<div class="log-row">
+      <div class="log-dot" style="background:${svc ? svc.color : '#888'}"></div>
+      <div class="log-name">${x.service_name}</div>
+      <div class="log-amt">${x.price > 0 ? x.price.toLocaleString('ru-RU') + ' ₽' : 'Бесплатно'}</div>
+      <div class="log-t">${t}</div>
+    </div>`;
+  }).join('');
+}
+
+function buildReportHTML(counts, rev, cnt) {
+  let html = '';
+  GROUPS.forEach(g => {
+    html += `<div class="rep-section-title">${g.label}</div>`;
+    g.ids.forEach(id => {
+      const s = SVCS.find(x => x.id === id); if (!s) return;
+      const c = counts[id] || 0, tot = c * s.price;
+      html += `<div class="rep-row">
+        <div class="rep-ico">${s.icon}</div>
+        <div class="rep-name">${s.name}</div>
+        <div class="rep-cnt">${c} шт</div>
+        <div class="rep-sum">${tot > 0 ? tot.toLocaleString('ru-RU') + ' ₽' : c > 0 ? 'Бесплатно' : '—'}</div>
+      </div>`;
+    });
+  });
+  html += `<div class="rep-total"><span>Итого</span><span>${rev.toLocaleString('ru-RU')} ₽ · ${cnt} продаж</span></div>`;
+  return html;
+}
+
+function renderReport() {
+  if (!state) return;
+  document.getElementById('reportBox').innerHTML =
+    `<div class="card-hd"><span>📊 Отчёт за текущую смену</span></div>` +
+    buildReportHTML(state.counts, state.rev, state.cnt);
+}
+
+async function renderShifts() {
+  const el = document.getElementById('shiftsBox');
+  try {
+    const r = await fetch('/api/shifts');
+    const shifts = await r.json();
+    if (!shifts.length) { el.innerHTML = '<div class="empty">Завершённых смен пока нет</div>'; return; }
+    el.innerHTML = shifts.map(sh => {
+      const d1 = new Date(sh.started_at).toLocaleString('ru-RU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+      const d2 = sh.ended_at ? new Date(sh.ended_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—';
+      const sel = selectedShiftId === sh.id ? ' selected' : '';
+      return `<div class="sh-row${sel}" onclick="showShift(${sh.id})">
+        <div class="sh-top"><div class="sh-date">${d1} — ${d2}</div><div class="sh-rev">${sh.rev.toLocaleString('ru-RU')} ₽</div></div>
+        <div class="sh-meta">${sh.cnt} продаж · нажмите для деталей</div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty">Ошибка загрузки</div>'; }
+}
+
+async function showShift(id) {
+  selectedShiftId = id;
+  renderShifts();
+  const el = document.getElementById('shiftDetail');
+  el.innerHTML = '<div class="card" style="margin-top:0.85rem"><div class="empty"><span class="spin"></span> Загрузка...</div></div>';
+  try {
+    const r = await fetch('/api/shifts/' + id);
+    const sh = await r.json();
+    const counts = {};
+    sh.sales.forEach(s => counts[s.service_id] = (counts[s.service_id] || 0) + 1);
+    const d1 = new Date(sh.started_at).toLocaleString('ru-RU', {day:'numeric', month:'long', hour:'2-digit', minute:'2-digit'});
+    const d2 = sh.ended_at ? new Date(sh.ended_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—';
+    el.innerHTML = `<div class="card" style="margin-top:0.85rem">
+      <div class="sh-detail-hd">
+        <span>📋 ${d1} — ${d2}</span>
+        <span class="sh-close" onclick="closeShiftDetail()">×</span>
+      </div>
+      ${buildReportHTML(counts, sh.rev, sh.cnt)}
+    </div>`;
+  } catch(e) { el.innerHTML = ''; }
+}
+
+function closeShiftDetail() {
+  selectedShiftId = null;
+  document.getElementById('shiftDetail').innerHTML = '';
+  renderShifts();
+}
+
+function renderAll() { renderStats(); renderBadges(); renderLog(); renderReport(); }
+
+function sw(t) {
+  ['cash','report','shifts'].forEach(x => {
+    document.getElementById('panel-' + x).classList.toggle('on', x === t);
+    document.getElementById('tab-' + x).classList.toggle('on', x === t);
+  });
+  if (t === 'shifts') renderShifts();
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+fetchState();
+setInterval(fetchState, 15000);
+</script>
+</body>
+</html>
