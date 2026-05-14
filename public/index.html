@@ -10,10 +10,12 @@
     --bg: #0f0f10; --bg2: #1a1a1c; --bg3: #242426;
     --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
     --text: #f0f0f0; --text2: #9a9a9f; --text3: #5a5a60;
-    --accent: #7f77dd; --accent-bg: rgba(127,119,221,0.15);
+    --accent: #7f77dd;
+    --green: #1D9E75; --green-bg: rgba(29,158,117,0.13); --green-border: rgba(29,158,117,0.35);
+    --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.13); --blue-border: rgba(59,130,246,0.35);
     --red: #e24b4a; --red-bg: rgba(226,75,74,0.12);
     --pink: #c0608a;
-    --r: 10px; --rl: 14px;
+    --r: 10px; --rl: 12px;
   }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
   .app { max-width: 980px; margin: 0 auto; padding: 1rem 0.875rem 4rem; }
@@ -30,11 +32,14 @@
   .chip.red:hover { background: var(--red-bg); }
   .chip:disabled { opacity: 0.3; pointer-events: none; }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 7px; margin-bottom: 1rem; }
-  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 0.7rem 0.85rem; }
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 7px; margin-bottom: 1rem; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 0.65rem 0.85rem; }
   .stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
-  .stat-val { font-size: 19px; font-weight: 600; letter-spacing: -0.5px; }
-  .stat.hi .stat-val { color: var(--accent); }
+  .stat-val { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
+  .stat.total .stat-val { color: var(--accent); }
+  .stat.cash .stat-val { color: var(--green); }
+  .stat.card .stat-val { color: var(--blue); }
 
   .tabs { display: flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 3px; width: fit-content; margin-bottom: 1rem; }
   .tab { font-size: 13px; padding: 6px 15px; border-radius: 8px; cursor: pointer; background: none; border: none; color: var(--text2); font-family: inherit; transition: all 0.13s; }
@@ -42,45 +47,75 @@
   .panel { display: none; }
   .panel.on { display: block; }
 
-  /* SERVICE GROUPS */
-  .svc-groups { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
-  .svc-group { display: flex; flex-direction: column; gap: 5px; }
-  .grp-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 2px; }
-  .svc-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  /* SERVICE TABLE */
+  .svc-table { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+  .svc-section { display: flex; flex-direction: column; gap: 4px; }
+  .svc-section-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 2px; margin-bottom: 2px; }
 
-  .svc-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 0.85rem 0.8rem; cursor: pointer; text-align: left; position: relative; display: flex; flex-direction: column; gap: 3px; font-family: inherit; transition: all 0.12s; }
-  .svc-btn:hover { border-color: var(--border2); background: var(--bg3); }
-  .svc-btn:active { transform: scale(0.955); }
-  .svc-btn.birthday { border-color: rgba(192,96,138,0.3); }
-  .svc-btn.birthday:hover { border-color: rgba(192,96,138,0.55); background: rgba(192,96,138,0.07); }
-  .s-ico { font-size: 18px; margin-bottom: 1px; }
-  .s-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
-  .s-price { font-size: 12px; color: var(--text2); }
-  .s-badge { position: absolute; top: 8px; right: 9px; background: var(--accent-bg); color: var(--accent); font-size: 11px; font-weight: 600; min-width: 21px; height: 21px; border-radius: 11px; display: flex; align-items: center; justify-content: center; padding: 0 5px; border: 1px solid rgba(127,119,221,0.25); }
-  .svc-btn.birthday .s-badge { background: rgba(192,96,138,0.15); color: var(--pink); border-color: rgba(192,96,138,0.3); }
+  /* Header row */
+  .svc-header { display: grid; grid-template-columns: 1fr 90px 90px; gap: 6px; padding: 0 2px; margin-bottom: 2px; }
+  .svc-header-lbl { font-size: 11px; font-weight: 600; text-align: center; padding: 4px 0; border-radius: 6px; }
+  .svc-header-lbl.cash { background: var(--green-bg); color: var(--green); }
+  .svc-header-lbl.card { background: var(--blue-bg); color: var(--blue); }
 
+  /* Service row */
+  .svc-item { display: grid; grid-template-columns: 1fr 90px 90px; gap: 6px; align-items: center; }
+  .svc-info { display: flex; align-items: center; gap: 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 0.6rem 0.75rem; min-height: 52px; }
+  .svc-info .ico { font-size: 18px; flex-shrink: 0; }
+  .svc-info .details { display: flex; flex-direction: column; gap: 1px; }
+  .svc-info .sname { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.2; }
+  .svc-info .sprice { font-size: 11px; color: var(--text2); }
+
+  .pay-btn { border-radius: var(--rl); padding: 0; cursor: pointer; font-family: inherit; transition: all 0.12s; border: 1px solid; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; position: relative; }
+  .pay-btn:active { transform: scale(0.94); }
+  .pay-btn.cash { background: var(--green-bg); border-color: var(--green-border); }
+  .pay-btn.cash:hover { background: rgba(29,158,117,0.22); border-color: var(--green); }
+  .pay-btn.card { background: var(--blue-bg); border-color: var(--blue-border); }
+  .pay-btn.card:hover { background: rgba(59,130,246,0.22); border-color: var(--blue); }
+  .pay-btn.birthday-btn { opacity: 0.75; }
+  .pay-btn .pay-ico { font-size: 15px; }
+  .pay-btn .pay-cnt { font-size: 11px; font-weight: 600; }
+  .pay-btn.cash .pay-cnt { color: var(--green); }
+  .pay-btn.card .pay-cnt { color: var(--blue); }
+
+  /* CARD */
   .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); overflow: hidden; }
   .card-hd { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
   .card-hd .act { font-size: 12px; color: var(--text3); cursor: pointer; font-weight: 400; }
   .card-hd .act:hover { color: var(--text2); }
 
-  .log-scroll { max-height: 220px; overflow-y: auto; }
-  .log-row { display: flex; align-items: center; gap: 9px; padding: 0.48rem 1rem; border-bottom: 1px solid var(--border); }
+  .log-scroll { max-height: 200px; overflow-y: auto; }
+  .log-row { display: flex; align-items: center; gap: 8px; padding: 0.45rem 1rem; border-bottom: 1px solid var(--border); }
   .log-row:last-child { border-bottom: none; }
-  .log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .log-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
   .log-name { font-size: 13px; flex: 1; }
-  .log-amt { font-size: 13px; font-weight: 500; min-width: 65px; text-align: right; }
-  .log-t { font-size: 11px; color: var(--text3); min-width: 36px; text-align: right; }
+  .log-pay { font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+  .log-pay.cash { background: var(--green-bg); color: var(--green); }
+  .log-pay.card { background: var(--blue-bg); color: var(--blue); }
+  .log-amt { font-size: 13px; font-weight: 500; min-width: 60px; text-align: right; }
+  .log-t { font-size: 11px; color: var(--text3); min-width: 34px; text-align: right; }
   .empty { padding: 1.5rem; text-align: center; font-size: 13px; color: var(--text3); }
 
-  .rep-section-title { padding: 0.42rem 1rem; background: var(--bg3); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
-  .rep-row { display: flex; align-items: center; padding: 0.55rem 1rem; border-bottom: 1px solid var(--border); gap: 8px; }
-  .rep-ico { font-size: 15px; width: 22px; flex-shrink: 0; }
-  .rep-name { font-size: 13px; flex: 1; }
-  .rep-cnt { font-size: 12px; color: var(--text3); min-width: 46px; text-align: right; }
-  .rep-sum { font-size: 13px; font-weight: 500; min-width: 78px; text-align: right; }
-  .rep-total { display: flex; justify-content: space-between; padding: 0.8rem 1rem; background: var(--bg3); font-weight: 600; font-size: 14px; border-top: 1px solid var(--border2); }
+  /* REPORT */
+  .rep-totals { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+  .rep-tot { text-align: center; }
+  .rep-tot-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .rep-tot-val { font-size: 20px; font-weight: 700; }
+  .rep-tot-val.t { color: var(--accent); }
+  .rep-tot-val.c { color: var(--green); }
+  .rep-tot-val.k { color: var(--blue); }
 
+  .rep-sec { padding: 0.4rem 1rem; background: var(--bg3); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+  .rep-row { display: grid; grid-template-columns: 20px 1fr 70px 70px 75px; align-items: center; gap: 8px; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); }
+  .rep-row:last-of-type {}
+  .rep-lbl { font-size: 11px; color: var(--text3); text-align: right; }
+  .rep-name { font-size: 13px; color: var(--text); }
+  .rep-cash-v { font-size: 12px; color: var(--green); text-align: right; }
+  .rep-card-v { font-size: 12px; color: var(--blue); text-align: right; }
+  .rep-total-v { font-size: 13px; font-weight: 500; text-align: right; }
+  .rep-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg3); font-weight: 600; font-size: 14px; border-top: 1px solid var(--border2); }
+
+  /* SHIFTS */
   .sh-row { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
   .sh-row:last-child { border-bottom: none; }
   .sh-row:hover { background: var(--bg3); }
@@ -88,11 +123,13 @@
   .sh-top { display: flex; justify-content: space-between; align-items: baseline; }
   .sh-date { font-size: 13px; font-weight: 500; }
   .sh-rev { font-size: 15px; font-weight: 600; color: var(--accent); }
-  .sh-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .sh-meta { font-size: 12px; color: var(--text3); margin-top: 3px; display: flex; gap: 10px; }
+  .sh-meta .c { color: var(--green); }
+  .sh-meta .k { color: var(--blue); }
 
   .sh-detail { margin-top: 0.85rem; }
   .sh-detail-hd { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; }
-  .sh-close { font-size: 20px; cursor: pointer; color: var(--text3); line-height: 1; padding: 0 4px; }
+  .sh-close { font-size: 20px; cursor: pointer; color: var(--text3); padding: 0 4px; }
   .sh-close:hover { color: var(--text2); }
 
   .bottom { margin-top: 0.85rem; }
@@ -101,17 +138,23 @@
 
   .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes pop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.3)} 100%{transform:scale(1);opacity:1} }
-  .pop { animation: pop 0.28s ease; }
+  @keyframes pop { 0%{transform:scale(0.7);opacity:0} 60%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+  .pop { animation: pop 0.22s ease; }
 
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text2); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 100; white-space: nowrap; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); border-radius: 20px; padding: 8px 18px; font-size: 13px; font-weight: 500; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 100; white-space: nowrap; }
   .toast.show { opacity: 1; }
+  .toast.cash-t { background: rgba(29,158,117,0.92); color: #fff; }
+  .toast.card-t { background: rgba(59,130,246,0.92); color: #fff; }
+  .toast.neutral { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
 
-  ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-  @media (max-width: 480px) {
-    .svc-row { grid-template-columns: repeat(2, 1fr); }
-    .stats { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 520px) {
+    .svc-header { grid-template-columns: 1fr 72px 72px; }
+    .svc-item { grid-template-columns: 1fr 72px 72px; }
+    .pay-btn { min-height: 48px; }
+    .svc-info { min-height: 48px; }
   }
 </style>
 </head>
@@ -131,12 +174,12 @@
   </div>
 
   <div class="stats">
-    <div class="stat hi"><div class="stat-lbl">Выручка</div><div class="stat-val" id="sRev">—</div></div>
+    <div class="stat total"><div class="stat-lbl">Итого</div><div class="stat-val" id="sRev">—</div></div>
+    <div class="stat cash"><div class="stat-lbl">💵 Наличка</div><div class="stat-val" id="sCash">—</div></div>
+    <div class="stat card"><div class="stat-lbl">💳 Карта</div><div class="stat-val" id="sCard">—</div></div>
     <div class="stat"><div class="stat-lbl">Продаж</div><div class="stat-val" id="sCnt">—</div></div>
     <div class="stat"><div class="stat-lbl">Входы</div><div class="stat-val" id="sVhod">—</div></div>
     <div class="stat"><div class="stat-lbl">Жетоны</div><div class="stat-val" id="sZh">—</div></div>
-    <div class="stat"><div class="stat-lbl">Аттракционы</div><div class="stat-val" id="sAttr">—</div></div>
-    <div class="stat"><div class="stat-lbl">Именинники</div><div class="stat-val" id="sBday">—</div></div>
   </div>
 
   <div class="tabs">
@@ -147,67 +190,10 @@
 
   <!-- КАССА -->
   <div class="panel on" id="panel-cash">
-    <div class="svc-groups">
-
-      <div class="svc-group">
-        <div class="grp-label">Основные</div>
-        <div class="svc-row">
-          <button class="svc-btn" onclick="sell('vhod')">
-            <div class="s-ico">🎪</div><div class="s-name">Вход в клуб</div><div class="s-price">500 ₽</div>
-            <div class="s-badge" id="b_vhod">0</div>
-          </button>
-          <button class="svc-btn" onclick="sell('zh1')">
-            <div class="s-ico">🪙</div><div class="s-name">Жетон ×1</div><div class="s-price">50 ₽</div>
-            <div class="s-badge" id="b_zh1">0</div>
-          </button>
-          <button class="svc-btn" onclick="sell('zh4')">
-            <div class="s-ico">🪙</div><div class="s-name">Жетоны ×4</div><div class="s-price">200 ₽</div>
-            <div class="s-badge" id="b_zh4">0</div>
-          </button>
-        </div>
-      </div>
-
-      <div class="svc-group">
-        <div class="grp-label">Аттракционы</div>
-        <div class="svc-row">
-          <button class="svc-btn" onclick="sell('vr')">
-            <div class="s-ico">🥽</div><div class="s-name">VR шлем</div><div class="s-price">300 ₽</div>
-            <div class="s-badge" id="b_vr">0</div>
-          </button>
-          <button class="svc-btn" onclick="sell('c7d')">
-            <div class="s-ico">🎬</div><div class="s-name">7D кинотеатр</div><div class="s-price">150 ₽</div>
-            <div class="s-badge" id="b_c7d">0</div>
-          </button>
-          <button class="svc-btn" onclick="sell('ps')">
-            <div class="s-ico">🎮</div><div class="s-name">PlayStation</div><div class="s-price">300 ₽</div>
-            <div class="s-badge" id="b_ps">0</div>
-          </button>
-        </div>
-      </div>
-
-      <div class="svc-group">
-        <div class="grp-label">Именинники (бесплатно)</div>
-        <div class="svc-row">
-          <button class="svc-btn birthday" onclick="sell('bday_vhod')">
-            <div class="s-ico">🎂</div><div class="s-name">Именинник</div><div class="s-price">Бесплатно</div>
-            <div class="s-badge" id="b_bday_vhod">0</div>
-          </button>
-          <button class="svc-btn birthday" onclick="sell('bday_7d')">
-            <div class="s-ico">🎂</div><div class="s-name">7D именинник</div><div class="s-price">Бесплатно</div>
-            <div class="s-badge" id="b_bday_7d">0</div>
-          </button>
-          <button class="svc-btn birthday" onclick="sell('bday_vr')">
-            <div class="s-ico">🎂</div><div class="s-name">VR именинник</div><div class="s-price">Бесплатно</div>
-            <div class="s-badge" id="b_bday_vr">0</div>
-          </button>
-        </div>
-      </div>
-
-    </div>
-
+    <div class="svc-table" id="svcTable"></div>
     <div class="card">
       <div class="card-hd"><span>📋 Журнал</span><span class="act" onclick="fetchState()">обновить</span></div>
-      <div class="log-scroll" id="logList"><div class="empty">Нажмите на услугу после оплаты клиента</div></div>
+      <div class="log-scroll" id="logList"><div class="empty">Нажмите 💵 или 💳 после оплаты</div></div>
     </div>
     <div class="bottom">
       <button class="btn-full" onclick="endShift()">🔄 Завершить смену</button>
@@ -230,41 +216,52 @@
 
 <script>
 const SVCS = [
-  { id:'vhod',      name:'Вход в клуб',    price:500, icon:'🎪', color:'#1D9E75', group:'vhod' },
-  { id:'zh1',       name:'Жетон ×1',        price:50,  icon:'🪙', color:'#BA7517', group:'zh' },
-  { id:'zh4',       name:'Жетоны ×4',       price:200, icon:'🪙', color:'#BA7517', group:'zh' },
+  { id:'vhod',      name:'Вход в клуб',    price:500, icon:'🎪', color:'#1D9E75', group:'main' },
+  { id:'zh1',       name:'Жетон ×1',        price:50,  icon:'🪙', color:'#BA7517', group:'main' },
+  { id:'zh4',       name:'Жетоны ×4',       price:200, icon:'🪙', color:'#BA7517', group:'main' },
   { id:'vr',        name:'VR шлем',         price:300, icon:'🥽', color:'#185FA5', group:'attr' },
   { id:'c7d',       name:'7D кинотеатр',    price:150, icon:'🎬', color:'#185FA5', group:'attr' },
   { id:'ps',        name:'PlayStation',     price:300, icon:'🎮', color:'#534AB7', group:'attr' },
-  { id:'bday_vhod', name:'Именинник',       price:0,   icon:'🎂', color:'#c0608a', group:'bday' },
-  { id:'bday_7d',   name:'7D именинник',    price:0,   icon:'🎂', color:'#c0608a', group:'bday' },
-  { id:'bday_vr',   name:'VR именинник',    price:0,   icon:'🎂', color:'#c0608a', group:'bday' },
+  { id:'bday_vhod', name:'Именинник',       price:0,   icon:'🎂', color:'#c0608a', group:'bday', free:true },
+  { id:'bday_7d',   name:'7D именинник',    price:0,   icon:'🎂', color:'#c0608a', group:'bday', free:true },
+  { id:'bday_vr',   name:'VR именинник',    price:0,   icon:'🎂', color:'#c0608a', group:'bday', free:true },
 ];
-
 const GROUPS = [
-  { label: 'Основные',     ids: ['vhod','zh1','zh4'] },
-  { label: 'Аттракционы',  ids: ['vr','c7d','ps'] },
-  { label: 'Именинники',   ids: ['bday_vhod','bday_7d','bday_vr'] },
+  { label:'Основные',    ids:['vhod','zh1','zh4'] },
+  { label:'Аттракционы', ids:['vr','c7d','ps'] },
+  { label:'Именинники',  ids:['bday_vhod','bday_7d','bday_vr'] },
 ];
 
-let state = null;
-let selling = false;
-let selectedShiftId = null;
+let state = null, selling = false, selectedShiftId = null;
+// Per-service counts by payment for badge display
+let cashCounts = {}, cardCounts = {};
+
+function calcTotals(sales) {
+  let cash = 0, card = 0;
+  const cc = {}, kc = {};
+  (sales || []).forEach(s => {
+    if (s.cashier === 'card') { card += s.price; kc[s.service_id] = (kc[s.service_id]||0)+1; }
+    else { cash += s.price; cc[s.service_id] = (cc[s.service_id]||0)+1; }
+  });
+  return { cash, card, cc, kc };
+}
 
 function grp(g) {
   if (!state) return 0;
-  return SVCS.filter(s => s.group === g).reduce((a, s) => a + (state.counts[s.id] || 0), 0);
+  return SVCS.filter(s => s.group === g).reduce((a, s) => a + (state.counts[s.id]||0), 0);
 }
 
 async function fetchState() {
   try {
     const r = await fetch('/api/state');
     state = await r.json();
+    const { cc, kc } = calcTotals(state.sales);
+    cashCounts = cc; cardCounts = kc;
     renderAll();
-  } catch(e) { toast('Ошибка соединения'); }
+  } catch(e) { toast('Ошибка соединения', 'neutral'); }
 }
 
-async function sell(id) {
+async function sell(id, payType) {
   if (selling) return;
   const s = SVCS.find(x => x.id === id); if (!s) return;
   selling = true;
@@ -272,11 +269,15 @@ async function sell(id) {
     const r = await fetch('/api/sell', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ service_id: s.id, service_name: s.name, price: s.price, cashier: '' })
+      body: JSON.stringify({ service_id: s.id, service_name: s.name, price: s.price, cashier: payType })
     });
     const data = await r.json();
-    if (data.ok) { await fetchState(); animBadge(id); toast('✓ ' + s.name); }
-  } catch(e) { toast('Ошибка'); }
+    if (data.ok) {
+      await fetchState();
+      animBadge(id, payType);
+      toast((payType === 'cash' ? '💵 ' : '💳 ') + s.name, payType === 'cash' ? 'cash-t' : 'card-t');
+    }
+  } catch(e) { toast('Ошибка', 'neutral'); }
   selling = false;
 }
 
@@ -284,33 +285,72 @@ async function undoLast() {
   try {
     const r = await fetch('/api/sell/last', { method: 'DELETE' });
     const data = await r.json();
-    if (data.ok) { await fetchState(); toast('↩ Отменено: ' + data.deleted.service_name); }
-    else toast(data.msg);
-  } catch(e) { toast('Ошибка'); }
+    if (data.ok) { await fetchState(); toast('↩ ' + data.deleted.service_name, 'neutral'); }
+    else toast(data.msg, 'neutral');
+  } catch(e) { toast('Ошибка', 'neutral'); }
 }
 
 async function endShift() {
-  if (!confirm('Завершить смену и начать новую?\nВсе данные сохранятся в истории.')) return;
+  if (!confirm('Завершить смену?\nДанные сохранятся в истории.')) return;
   try {
-    await fetch('/api/shift/end', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+    await fetch('/api/shift/end', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
     selectedShiftId = null;
     document.getElementById('shiftDetail').innerHTML = '';
     await fetchState();
-    toast('✓ Смена завершена');
+    toast('✓ Смена завершена', 'neutral');
     sw('cash');
-  } catch(e) { toast('Ошибка'); }
+  } catch(e) { toast('Ошибка', 'neutral'); }
 }
 
 function exportCSV() { window.location.href = '/api/export/csv'; }
 
+function buildSvcTable() {
+  const tbl = document.getElementById('svcTable');
+  let html = '';
+  GROUPS.forEach(g => {
+    html += `<div class="svc-section">
+      <div class="svc-section-lbl">${g.label}</div>
+      <div class="svc-header">
+        <div></div>
+        <div class="svc-header-lbl cash">💵 Наличка</div>
+        <div class="svc-header-lbl card">💳 Карта</div>
+      </div>`;
+    g.ids.forEach(id => {
+      const s = SVCS.find(x => x.id === id); if (!s) return;
+      const priceStr = s.price > 0 ? s.price.toLocaleString('ru-RU') + ' ₽' : 'Бесплатно';
+      const bdClass = s.free ? ' birthday-btn' : '';
+      html += `<div class="svc-item">
+        <div class="svc-info">
+          <div class="ico">${s.icon}</div>
+          <div class="details">
+            <div class="sname">${s.name}</div>
+            <div class="sprice">${priceStr}</div>
+          </div>
+        </div>
+        <button class="pay-btn cash${bdClass}" onclick="sell('${id}','cash')">
+          <div class="pay-ico">💵</div>
+          <div class="pay-cnt" id="bc_${id}">0</div>
+        </button>
+        <button class="pay-btn card${bdClass}" onclick="sell('${id}','card')">
+          <div class="pay-ico">💳</div>
+          <div class="pay-cnt" id="bk_${id}">0</div>
+        </button>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  tbl.innerHTML = html;
+}
+
 function renderStats() {
   if (!state) return;
+  const { cash, card } = calcTotals(state.sales);
   document.getElementById('sRev').textContent = state.rev.toLocaleString('ru-RU') + ' ₽';
+  document.getElementById('sCash').textContent = cash.toLocaleString('ru-RU') + ' ₽';
+  document.getElementById('sCard').textContent = card.toLocaleString('ru-RU') + ' ₽';
   document.getElementById('sCnt').textContent = state.cnt;
-  document.getElementById('sVhod').textContent = grp('vhod');
-  document.getElementById('sZh').textContent = grp('zh');
-  document.getElementById('sAttr').textContent = grp('attr');
-  document.getElementById('sBday').textContent = grp('bday');
+  document.getElementById('sVhod').textContent = grp('main');
+  document.getElementById('sZh').textContent = (state.counts['zh1']||0) + (state.counts['zh4']||0);
   document.getElementById('undoBtn').disabled = !state.sales || !state.sales.length;
   if (state.shift) {
     const d = new Date(state.shift.started_at);
@@ -320,56 +360,84 @@ function renderStats() {
 }
 
 function renderBadges() {
-  if (!state) return;
-  SVCS.forEach(s => { const el = document.getElementById('b_' + s.id); if (el) el.textContent = state.counts[s.id] || 0; });
+  SVCS.forEach(s => {
+    const bc = document.getElementById('bc_' + s.id);
+    const bk = document.getElementById('bk_' + s.id);
+    if (bc) bc.textContent = cashCounts[s.id] || 0;
+    if (bk) bk.textContent = cardCounts[s.id] || 0;
+  });
 }
 
-function animBadge(id) {
-  const el = document.getElementById('b_' + id); if (!el) return;
+function animBadge(id, payType) {
+  const el = document.getElementById(payType === 'cash' ? 'bc_' + id : 'bk_' + id);
+  if (!el) return;
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
 }
 
 function renderLog() {
   const el = document.getElementById('logList');
   if (!state || !state.sales || !state.sales.length) {
-    el.innerHTML = '<div class="empty">Нажмите на услугу после оплаты клиента</div>'; return;
+    el.innerHTML = '<div class="empty">Нажмите 💵 или 💳 после оплаты</div>'; return;
   }
   el.innerHTML = state.sales.slice().reverse().map(x => {
     const t = new Date(x.sold_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
     const svc = SVCS.find(s => s.id === x.service_id);
+    const isCard = x.cashier === 'card';
     return `<div class="log-row">
-      <div class="log-dot" style="background:${svc ? svc.color : '#888'}"></div>
+      <div class="log-dot" style="background:${svc?svc.color:'#888'}"></div>
       <div class="log-name">${x.service_name}</div>
-      <div class="log-amt">${x.price > 0 ? x.price.toLocaleString('ru-RU') + ' ₽' : 'Бесплатно'}</div>
+      <div class="log-pay ${isCard?'card':'cash'}">${isCard?'💳 Карта':'💵 Нал'}</div>
+      <div class="log-amt">${x.price>0?x.price.toLocaleString('ru-RU')+' ₽':'Бесплатно'}</div>
       <div class="log-t">${t}</div>
     </div>`;
   }).join('');
 }
 
-function buildReportHTML(counts, rev, cnt) {
-  let html = '';
+function buildReportHTML(sales, header) {
+  const cashById = {}, cardById = {}, cntById = {};
+  (sales||[]).forEach(s => {
+    cntById[s.service_id] = (cntById[s.service_id]||0)+1;
+    if (s.cashier==='card') cardById[s.service_id]=(cardById[s.service_id]||0)+s.price;
+    else cashById[s.service_id]=(cashById[s.service_id]||0)+s.price;
+  });
+  const { cash, card } = calcTotals(sales);
+  const rev = cash + card;
+
+  let html = header ? `<div class="card-hd"><span>${header}</span></div>` : '';
+  html += `<div class="rep-totals">
+    <div class="rep-tot"><div class="rep-tot-lbl">Итого</div><div class="rep-tot-val t">${rev.toLocaleString('ru-RU')} ₽</div></div>
+    <div class="rep-tot"><div class="rep-tot-lbl">💵 Наличка</div><div class="rep-tot-val c">${cash.toLocaleString('ru-RU')} ₽</div></div>
+    <div class="rep-tot"><div class="rep-tot-lbl">💳 Карта</div><div class="rep-tot-val k">${card.toLocaleString('ru-RU')} ₽</div></div>
+  </div>
+  <div class="rep-row" style="background:var(--bg3);border-bottom:1px solid var(--border)">
+    <div></div><div class="rep-name" style="font-size:11px;color:var(--text3)">Услуга</div>
+    <div class="rep-lbl" style="color:var(--green)">💵 Нал</div>
+    <div class="rep-lbl" style="color:var(--blue)">💳 Карта</div>
+    <div class="rep-lbl">Итого</div>
+  </div>`;
+
   GROUPS.forEach(g => {
-    html += `<div class="rep-section-title">${g.label}</div>`;
+    html += `<div class="rep-sec">${g.label}</div>`;
     g.ids.forEach(id => {
-      const s = SVCS.find(x => x.id === id); if (!s) return;
-      const c = counts[id] || 0, tot = c * s.price;
+      const s = SVCS.find(x=>x.id===id); if(!s) return;
+      const cnt = cntById[id]||0;
+      const c = cashById[id]||0, k = cardById[id]||0, tot = c+k;
       html += `<div class="rep-row">
-        <div class="rep-ico">${s.icon}</div>
-        <div class="rep-name">${s.name}</div>
-        <div class="rep-cnt">${c} шт</div>
-        <div class="rep-sum">${tot > 0 ? tot.toLocaleString('ru-RU') + ' ₽' : c > 0 ? 'Бесплатно' : '—'}</div>
+        <div style="font-size:15px">${s.icon}</div>
+        <div class="rep-name">${s.name} <span style="color:var(--text3);font-size:11px">${cnt}шт</span></div>
+        <div class="rep-cash-v">${c>0?c.toLocaleString('ru-RU')+' ₽':'—'}</div>
+        <div class="rep-card-v">${k>0?k.toLocaleString('ru-RU')+' ₽':'—'}</div>
+        <div class="rep-total-v">${tot>0?tot.toLocaleString('ru-RU')+' ₽':cnt>0?'Бесплатно':'—'}</div>
       </div>`;
     });
   });
-  html += `<div class="rep-total"><span>Итого</span><span>${rev.toLocaleString('ru-RU')} ₽ · ${cnt} продаж</span></div>`;
+  html += `<div class="rep-footer"><span>Итого за смену</span><span>${rev.toLocaleString('ru-RU')} ₽ · ${(sales||[]).length} продаж</span></div>`;
   return html;
 }
 
 function renderReport() {
   if (!state) return;
-  document.getElementById('reportBox').innerHTML =
-    `<div class="card-hd"><span>📊 Отчёт за текущую смену</span></div>` +
-    buildReportHTML(state.counts, state.rev, state.cnt);
+  document.getElementById('reportBox').innerHTML = buildReportHTML(state.sales, '📊 Отчёт за текущую смену');
 }
 
 async function renderShifts() {
@@ -381,10 +449,10 @@ async function renderShifts() {
     el.innerHTML = shifts.map(sh => {
       const d1 = new Date(sh.started_at).toLocaleString('ru-RU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
       const d2 = sh.ended_at ? new Date(sh.ended_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—';
-      const sel = selectedShiftId === sh.id ? ' selected' : '';
+      const sel = selectedShiftId===sh.id ? ' selected' : '';
       return `<div class="sh-row${sel}" onclick="showShift(${sh.id})">
         <div class="sh-top"><div class="sh-date">${d1} — ${d2}</div><div class="sh-rev">${sh.rev.toLocaleString('ru-RU')} ₽</div></div>
-        <div class="sh-meta">${sh.cnt} продаж · нажмите для деталей</div>
+        <div class="sh-meta"><span>${sh.cnt} продаж</span><span class="c">нажмите для деталей →</span></div>
       </div>`;
     }).join('');
   } catch(e) { el.innerHTML = '<div class="empty">Ошибка загрузки</div>'; }
@@ -396,18 +464,13 @@ async function showShift(id) {
   const el = document.getElementById('shiftDetail');
   el.innerHTML = '<div class="card" style="margin-top:0.85rem"><div class="empty"><span class="spin"></span> Загрузка...</div></div>';
   try {
-    const r = await fetch('/api/shifts/' + id);
+    const r = await fetch('/api/shifts/'+id);
     const sh = await r.json();
-    const counts = {};
-    sh.sales.forEach(s => counts[s.service_id] = (counts[s.service_id] || 0) + 1);
     const d1 = new Date(sh.started_at).toLocaleString('ru-RU', {day:'numeric', month:'long', hour:'2-digit', minute:'2-digit'});
     const d2 = sh.ended_at ? new Date(sh.ended_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—';
     el.innerHTML = `<div class="card" style="margin-top:0.85rem">
-      <div class="sh-detail-hd">
-        <span>📋 ${d1} — ${d2}</span>
-        <span class="sh-close" onclick="closeShiftDetail()">×</span>
-      </div>
-      ${buildReportHTML(counts, sh.rev, sh.cnt)}
+      <div class="sh-detail-hd"><span>📋 ${d1} — ${d2}</span><span class="sh-close" onclick="closeShiftDetail()">×</span></div>
+      ${buildReportHTML(sh.sales, '')}
     </div>`;
   } catch(e) { el.innerHTML = ''; }
 }
@@ -422,20 +485,21 @@ function renderAll() { renderStats(); renderBadges(); renderLog(); renderReport(
 
 function sw(t) {
   ['cash','report','shifts'].forEach(x => {
-    document.getElementById('panel-' + x).classList.toggle('on', x === t);
-    document.getElementById('tab-' + x).classList.toggle('on', x === t);
+    document.getElementById('panel-'+x).classList.toggle('on', x===t);
+    document.getElementById('tab-'+x).classList.toggle('on', x===t);
   });
-  if (t === 'shifts') renderShifts();
+  if (t==='shifts') renderShifts();
 }
 
 let toastTimer;
-function toast(msg) {
+function toast(msg, cls) {
   const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
+  el.textContent = msg; el.className = 'toast show ' + cls;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
+buildSvcTable();
 fetchState();
 setInterval(fetchState, 15000);
 </script>
