@@ -145,13 +145,6 @@ app.get('/api/export/csv', async (req, res) => {
     res.send(rows.join('\n'));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-    const total = sales.reduce((a, s) => a + s.price, 0);
-    rows.push(`ИТОГО;;${total}`);
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="smena_${shift.id}.csv"`);
-    res.send(rows.join('\n'));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
 
 init().then(() => {
   app.listen(PORT, () => console.log(`Касса Планета запущена на порту ${PORT}`));
