@@ -127,11 +127,24 @@ app.get('/api/export/csv', async (req, res) => {
   try {
     const shift = await ensureActiveShift();
     const sales = await all('SELECT * FROM sales WHERE shift_id = ? ORDER BY sold_at ASC', [shift.id]);
-    const rows = ['\uFEFFВремя;Услуга;Сумма (₽)'];
+    const rows = ['\uFEFFВремя;Услуга;Оплата;Сумма (₽)'];
     sales.forEach(s => {
       const t = new Date(s.sold_at).toLocaleString('ru-RU');
-      rows.push(`${t};${s.service_name};${s.price}`);
+      const payLabel = s.cashier === 'card' ? 'Карта' : 'Наличка';
+      rows.push(t + ';' + s.service_name + ';' + payLabel + ';' + s.price);
     });
+    const total = sales.reduce((a, s) => a + s.price, 0);
+    const cash = sales.filter(s => s.cashier !== 'card').reduce((a, s) => a + s.price, 0);
+    const card = sales.filter(s => s.cashier === 'card').reduce((a, s) => a + s.price, 0);
+    rows.push(';;;');
+    rows.push('ИТОГО;;Наличка;' + cash);
+    rows.push(';;Карта;' + card);
+    rows.push(';;ВСЕГО;' + total);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="smena_' + shift.id + '.csv"');
+    res.send(rows.join('\n'));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
     const total = sales.reduce((a, s) => a + s.price, 0);
     rows.push(`ИТОГО;;${total}`);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
