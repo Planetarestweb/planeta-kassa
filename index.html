@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Планета — Касса смены</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0b0d;
+  --s1: #111318;
+  --s2: #181b21;
+  --s3: #1f2229;
+  --border: #272b35;
+  --border2: #313644;
+  --gold: #d4a843;
+  --gold2: #f0c96a;
+  --green: #3ecf7a;
+  --red: #e85555;
+  --blue: #4a9eff;
+  --orange: #f0834a;
+  --purple: #9b6fff;
+  --text: #eceaf4;
+  --text2: #9ca3b0;
+  --text3: #5a6275;
+  --r: 14px;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,11,13,.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.logo {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--gold) 0%, #8a5c18 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(212,168,67,.4), 0 4px 16px rgba(212,168,67,.2);
+}
+
+.header-text h1 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: .5px; color: var(--gold2);
+}
+.header-text p { font-size: 11px; color: var(--text3); font-weight: 400; margin-top: 1px; }
+
+.header-date {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+}
+.header-date input[type=date] {
+  background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 6px 10px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 12px; outline: none;
+  transition: border-color .2s;
+}
+.header-date input[type=date]:focus { border-color: var(--gold); }
+
+/* ── MAIN ── */
+main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text3); margin: 22px 0 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: border-color .2s;
+}
+.card:focus-within { border-color: var(--border2); }
+
+.card-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.card-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.card-icon.green  { background: rgba(62,207,122,.12); }
+.card-icon.gold   { background: rgba(212,168,67,.12); }
+.card-icon.red    { background: rgba(232,85,85,.12); }
+.card-icon.blue   { background: rgba(74,158,255,.12); }
+.card-icon.orange { background: rgba(240,131,74,.12); }
+.card-icon.purple { background: rgba(155,111,255,.12); }
+
+.card-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.card-sub   { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: 10px; padding: 12px;
+  text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative; overflow: hidden; margin-bottom: 10px;
+}
+.upload-zone:hover { border-color: var(--gold); background: rgba(212,168,67,.04); }
+.upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.uz-text { font-size: 12px; color: var(--text3); }
+.uz-text span { color: var(--gold2); font-weight: 500; }
+.uz-icon { font-size: 20px; margin-bottom: 3px; }
+
+.thumb-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.thumb {
+  width: 58px; height: 58px; border-radius: 7px;
+  overflow: hidden; border: 1px solid var(--border2);
+  flex-shrink: 0; position: relative;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.file-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; background: var(--s3);
+  border: 1px solid var(--border2); border-radius: 6px;
+  font-size: 11.5px; color: var(--text2); margin: 0 4px 4px 0;
+}
+
+/* ── AI STATUS ── */
+.ai-status { font-size: 11.5px; min-height: 16px; margin-bottom: 6px; }
+.ai-status.ok  { color: var(--green); }
+.ai-status.err { color: var(--red); }
+.ai-status.loading { color: var(--text3); }
+.spin { display: inline-block; width: 10px; height: 10px; border: 1.5px solid var(--border2); border-top-color: var(--gold); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 4px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── AMOUNT INPUT ── */
+.amount-row { display: flex; align-items: center; gap: 8px; }
+.amount-row .cur { font-size: 18px; color: var(--text3); font-weight: 300; flex-shrink: 0; }
+.amount-input {
+  flex: 1; background: var(--s3); border: 1px solid var(--border2);
+  border-radius: 9px; padding: 10px 13px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 20px; font-weight: 600; outline: none;
+  transition: border-color .2s;
+  -moz-appearance: textfield;
+}
+.amount-input::-webkit-inner-spin-button,
+.amount-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.amount-input:focus { border-color: var(--gold); }
+.amount-input::placeholder { color: var(--text3); font-weight: 400; font-size: 15px; }
+
+/* ── SPLIT CASH / CARD ── */
+.split-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.split-field { display: flex; flex-direction: column; gap: 5px; }
+.split-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 5px;
+}
+.split-label.cash  { color: var(--green); }
+.split-label.card  { color: var(--blue); }
+.split-badge {
+  padding: 2px 7px; border-radius: 4px; font-size: 9.5px; font-weight: 700;
+  letter-spacing: .5px;
+}
+.split-badge.cash { background: rgba(62,207,122,.15); color: var(--green); }
+.split-badge.card { background: rgba(74,158,255,.15); color: var(--blue); }
+.split-input {
+  background: var(--s3); border-radius: 9px; padding: 10px 12px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 18px; font-weight: 600; outline: none;
+  transition: border-color .2s; width: 100%;
+  -moz-appearance: textfield;
+  border: 1.5px solid var(--border2);
+}
+.split-input::-webkit-inner-spin-button,
+.split-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.split-input.cash:focus { border-color: var(--green); }
+.split-input.card:focus { border-color: var(--blue); }
+.split-input::placeholder { color: var(--text3); font-weight: 400; font-size: 13px; }
+.split-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding: 7px 10px;
+  background: var(--s3); border-radius: 8px;
+  font-size: 12px; color: var(--text2);
+}
+.split-total-row strong { color: var(--text); font-size: 13.5px; }
+
+/* ── CASH BALANCE HIGHLIGHT ── */
+.cash-highlight {
+  background: linear-gradient(135deg, rgba(62,207,122,.08) 0%, rgba(62,207,122,.03) 100%);
+  border: 1.5px solid rgba(62,207,122,.25);
+  border-radius: var(--r); padding: 16px;
+  margin-top: 14px; display: none;
+}
+.cash-highlight.show { display: block; }
+.cash-highlight-title {
+  font-family: 'Unbounded', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--green);
+  margin-bottom: 12px;
+}
+.cash-hl-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(62,207,122,.1);
+}
+.cash-hl-row:last-child { border-bottom: none; }
+.cash-hl-row .hl-label { color: var(--text2); }
+.cash-hl-row .hl-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.cash-hl-row .hl-val.pos { color: var(--green); }
+.cash-hl-row .hl-val.neg { color: var(--red); }
+.cash-hl-row .hl-val.neu { color: var(--text2); }
+.cash-hl-total {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding: 10px 12px;
+  background: rgba(62,207,122,.1); border-radius: 9px;
+}
+.cash-hl-total-label { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 600; color: var(--green); letter-spacing: .5px; }
+.cash-hl-total-val { font-family: 'Unbounded', sans-serif; font-size: 20px; font-weight: 600; }
+.cash-hl-total-val.pos { color: var(--green); }
+.cash-hl-total-val.neg { color: var(--red); }
+
+/* ── DEPT GRID ── */
+.dept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dept-field { display: flex; flex-direction: column; gap: 5px; }
+.dept-label { font-size: 11.5px; font-weight: 600; color: var(--text2); }
+.upload-zone-sm { padding: 7px 8px; margin-bottom: 4px; }
+.upload-zone-sm .uz-text-sm { font-size: 11px; color: var(--text3); }
+.dept-input-wrap { display: flex; align-items: center; gap: 5px; }
+.cur-sm { font-size: 14px; color: var(--text3); font-weight: 300; flex-shrink: 0; }
+.dept-input {
+  flex: 1; background: var(--s3); border: 1.5px solid var(--border2);
+  border-radius: 8px; padding: 8px 10px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 16px; font-weight: 600; outline: none;
+  transition: border-color .2s; width: 100%;
+  -moz-appearance: textfield;
+}
+.dept-input::-webkit-inner-spin-button,
+.dept-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.dept-input:focus { border-color: var(--gold); }
+.dept-input::placeholder { color: var(--text3); font-weight: 400; font-size: 13px; }
+.notes-input {
+  width: 100%; background: var(--s3); border: 1px solid var(--border2);
+  border-radius: 9px; padding: 9px 12px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 13px; outline: none; resize: vertical;
+  transition: border-color .2s; min-height: 60px;
+}
+.notes-input:focus { border-color: var(--gold); }
+.notes-input::placeholder { color: var(--text3); }
+
+/* ── SUMMARY ── */
+.summary {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+  margin-top: 24px; display: none;
+}
+.summary.show { display: block; }
+.summary-header {
+  padding: 14px 16px; background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .8px; text-transform: uppercase;
+  color: var(--text3);
+}
+
+.sum-group { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.sum-group-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 8px; }
+.sum-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
+.sum-row .sum-label { color: var(--text2); }
+.sum-row .sum-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.sum-row .sum-val.pos { color: var(--green); }
+.sum-row .sum-val.neg { color: var(--red); }
+.sum-row .sum-val.neu { color: var(--text2); }
+
+.sum-total {
+  padding: 16px; display: flex; justify-content: space-between; align-items: center;
+  background: var(--s2);
+}
+.sum-total-label { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 600; color: var(--text); }
+.sum-total-val { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 600; }
+.sum-total-val.pos { color: var(--green); }
+.sum-total-val.neg { color: var(--red); }
+
+/* ── BUTTONS ── */
+.btn-row { display: flex; gap: 10px; margin-top: 24px; }
+.btn-calc {
+  flex: 1; padding: 14px; border-radius: 11px;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8892a 100%);
+  border: none; color: #0a0b0d;
+  font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 600;
+  letter-spacing: .4px; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  box-shadow: 0 4px 20px rgba(212,168,67,.25);
+}
+.btn-calc:hover { opacity: .9; }
+.btn-calc:active { transform: scale(.98); }
+
+.btn-excel {
+  padding: 14px 18px; border-radius: 11px;
+  background: rgba(62,207,122,.12);
+  border: 1px solid rgba(62,207,122,.3);
+  color: var(--green);
+  font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+  display: none;
+}
+.btn-excel:hover { background: rgba(62,207,122,.2); }
+.btn-excel.show { display: block; }
+
+/* ── AI CHAT STRIP ── */
+.ai-strip {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(10,11,13,.96); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px 14px;
+}
+.ai-strip-inner {
+  max-width: 600px; margin: 0 auto;
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.ai-strip-input {
+  flex: 1; background: var(--s2); border: 1px solid var(--border2);
+  border-radius: 11px; padding: 9px 13px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 13.5px; outline: none; resize: none;
+  max-height: 90px; min-height: 20px;
+  transition: border-color .2s;
+}
+.ai-strip-input:focus { border-color: var(--gold); }
+.ai-strip-input::placeholder { color: var(--text3); }
+.ai-strip-send {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--gold); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .15s;
+}
+.ai-strip-send:hover { background: var(--gold2); }
+.ai-strip-send svg { fill: #0a0b0d; }
+.ai-strip-send:disabled { background: var(--border); cursor: not-allowed; }
+
+.ai-reply {
+  max-width: 600px; margin: 0 auto 8px;
+  font-size: 12.5px; color: var(--text2);
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 13px;
+  animation: fadeUp .2s ease both; display: none;
+  white-space: pre-wrap; line-height: 1.6;
+}
+.ai-reply.show { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── UPLOAD BUTTON ── */
+.upload-btn {
+  width: 100%; padding: 12px 16px;
+  background: var(--s3); border: 1.5px dashed var(--border2);
+  border-radius: 10px; color: var(--gold2);
+  font-family: 'Manrope', sans-serif; font-size: 13.5px; font-weight: 500;
+  cursor: pointer; text-align: center;
+  transition: border-color .2s, background .2s;
+  margin-bottom: 8px;
+}
+.upload-btn:hover { border-color: var(--gold); background: rgba(212,168,67,.06); }
+.file-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+
+/* ── SUPPLIER ROWS ── */
+.supplier-list { display: flex; flex-direction: column; gap: 8px; }
+.supplier-row { display: flex; gap: 8px; align-items: center; }
+.supplier-name {
+  flex: 1; background: var(--s3); border: 1.5px solid var(--border2);
+  border-radius: 8px; padding: 8px 10px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 13px; outline: none; transition: border-color .2s;
+}
+.supplier-name:focus { border-color: var(--gold); }
+.supplier-name::placeholder { color: var(--text3); }
+.supplier-amount-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; width: 140px; }
+.supplier-amount { width: 100%; }
+
+/* ── PRICE CATALOG ── */
+.price-catalog-grid { display: flex; flex-direction: column; gap: 6px; }
+.price-row { display: flex; gap: 8px; align-items: center; }
+.price-name {
+  flex: 1; background: var(--s3); border: 1.5px solid var(--border2);
+  border-radius: 8px; padding: 7px 10px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 13px; outline: none; transition: border-color .2s;
+}
+.price-name:focus { border-color: var(--purple); }
+.price-name::placeholder { color: var(--text3); }
+.price-val {
+  width: 100px; flex-shrink: 0;
+  background: var(--s3); border: 1.5px solid var(--border2);
+  border-radius: 8px; padding: 7px 10px;
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 13px; font-weight: 600; outline: none;
+  transition: border-color .2s; -moz-appearance: textfield;
+}
+.price-val::-webkit-inner-spin-button { -webkit-appearance: none; }
+.price-val:focus { border-color: var(--purple); }
+.price-val::placeholder { color: var(--text3); }
+.price-del {
+  width: 28px; height: 28px; border-radius: 6px; border: none;
+  background: rgba(232,85,85,.15); color: var(--red);
+  cursor: pointer; font-size: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.wo-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0; font-size: 12.5px; border-bottom: 1px solid var(--border);
+}
+.wo-row:last-child { border-bottom: none; }
+.wo-row .wo-name { color: var(--text2); }
+.wo-row .wo-sum { font-weight: 600; color: #c4a0ff; }
+.wo-row .wo-sum.unknown { color: var(--text3); font-style: italic; }
+
+/* ── HISTORY ── */
+.history-btn {
+  width:36px;height:36px;border-radius:8px;
+  background:var(--s2);border:1px solid var(--border2);
+  color:var(--text2);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s;
+}
+.history-btn:hover{border-color:var(--gold);}
+.history-item {
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 12px;background:var(--s2);border:1px solid var(--border);
+  border-radius:9px;cursor:pointer;transition:border-color .2s;
+}
+.history-item:hover{border-color:var(--gold);}
+.history-item-date{font-size:12.5px;font-weight:600;color:var(--text);}
+.history-item-info{font-size:11px;color:var(--text3);margin-top:2px;}
+.history-item-cash{font-size:13px;font-weight:700;color:var(--green);}
+.history-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 4px;}
+.history-del:hover{color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">🪐</div>
+  <div class="header-text">
+    <h1>ПЛАНЕТА</h1>
+    <p>Касса смены</p>
+  </div>
+  <div class="header-date">
+    <input type="date" id="shiftDate">
+    <button class="history-btn" onclick="toggleHistory()" title="История смен">📋</button>
+  </div>
+</header>
+
+<!-- HISTORY DRAWER -->
+<div id="history-drawer" style="display:none;background:var(--s1);border-bottom:1px solid var(--border);padding:12px 16px;max-width:600px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-family:Unbounded,sans-serif;font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--gold2)">📋 ИСТОРИЯ СМЕН</span>
+    <button onclick="toggleHistory()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
+  </div>
+  <div id="history-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto"></div>
+  <div id="history-empty" style="font-size:12px;color:var(--text3);text-align:center;padding:20px">Сохранённых смен нет</div>
+</div>
+
+<main>
+
+  <!-- ══ ВЫРУЧКА ══ -->
+  <div class="section-label">📈 Выручка</div>
+
+  <!-- Ресторан -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon green">🍽️</div>
+      <div>
+        <div class="card-title">Ресторан</div>
+        <div class="card-sub">Загрузи «Отчёт по чекам» xlsx из iiko</div>
+      </div>
+    </div>
+
+    <!-- hidden real file input -->
+    <input type="file" id="f-rest-cash-photo" accept=".xlsx,.xls" style="display:none">
+
+    <button type="button" class="upload-btn" onclick="document.getElementById('f-rest-cash-photo').click()">
+      📊 Выбрать файл iiko (.xlsx)
+    </button>
+
+    <button type="button" class="upload-btn" onclick="loadFromIiko()" style="margin-top:10px">
+      🔄 Загрузить отчёт из iiko
+    </button>
+
+    <div class="file-chip-row" id="t-rest-cash-photo"></div>
+    <div class="ai-status" id="s-rest-cash-photo"></div>
+
+    <!-- Manual inputs -->
+    <div class="split-row" style="margin-top:12px">
+      <div class="split-field">
+        <div class="split-label cash">💵 <span class="split-badge cash">НАЛИЧКА</span></div>
+        <input class="split-input cash" type="number" id="v-rest-cash" placeholder="0 ₽" oninput="updateSplitTotal('rest')">
+      </div>
+      <div class="split-field">
+        <div class="split-label card">💳 <span class="split-badge card">КАРТА</span></div>
+        <input class="split-input card" type="number" id="v-rest-card" placeholder="0 ₽" oninput="updateSplitTotal('rest')">
+      </div>
+    </div>
+    <div class="split-total-row">
+      <span>Итого ресторан</span>
+      <strong id="total-rest">0 ₽</strong>
+    </div>
+  </div>
+
+  <!-- Детский клуб -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon gold">🎠</div>
+      <div>
+        <div class="card-title">Детский клуб</div>
+        <div class="card-sub">Загрузи файл или введи вручную</div>
+      </div>
+    </div>
+    <div class="upload-zone">
+      <input type="file" id="f-club" accept="image/*,application/pdf,.xlsx,.xls,.csv" multiple>
+      <div class="uz-icon">📁</div>
+      <div class="uz-text">Нажми или перетащи — <span>фото / Excel / PDF</span></div>
+    </div>
+    <div class="thumb-row" id="t-club"></div>
+    <div class="ai-status" id="s-club"></div>
+    <div class="split-row">
+      <div class="split-field">
+        <div class="split-label cash">💵 <span class="split-badge cash">НАЛИЧКА</span></div>
+        <input class="split-input cash" type="number" id="v-club-cash" placeholder="0 ₽" oninput="updateSplitTotal('club')">
+      </div>
+      <div class="split-field">
+        <div class="split-label card">💳 <span class="split-badge card">КАРТА</span></div>
+        <input class="split-input card" type="number" id="v-club-card" placeholder="0 ₽" oninput="updateSplitTotal('club')">
+      </div>
+    </div>
+    <div class="split-total-row">
+      <span>Итого детский клуб</span>
+      <strong id="total-club">0 ₽</strong>
+    </div>
+  </div>
+
+  <!-- Яндекс Еда -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon orange">🟡</div>
+      <div>
+        <div class="card-title">Яндекс Еда</div>
+        <div class="card-sub">Загрузи отчёт xlsx — комиссия считается автоматически</div>
+      </div>
+    </div>
+
+    <input type="file" id="f-yandex" accept=".xlsx,.xls" style="display:none">
+    <button type="button" class="upload-btn" onclick="document.getElementById('f-yandex').click()">
+      📊 Выбрать отчёт Яндекс Еды (.xlsx)
+    </button>
+    <div class="file-chip-row" id="t-yandex"></div>
+    <div class="ai-status" id="s-yandex"></div>
+
+    <!-- Result breakdown -->
+    <div id="yandex-breakdown" style="display:none;margin-top:10px">
+      <div class="wo-row"><span class="wo-name">📦 Заказов завершено</span><span class="wo-sum" id="yd-orders" style="color:var(--text2)">—</span></div>
+      <div class="wo-row"><span class="wo-name">💰 Выручка (брутто)</span><span class="wo-sum" id="yd-gross" style="color:var(--green)">—</span></div>
+      <div class="wo-row"><span class="wo-name">📉 Комиссия доставка (29.17% + НДС)</span><span class="wo-sum" id="yd-comm-d" style="color:var(--red)">—</span></div>
+      <div class="wo-row"><span class="wo-name">📉 Подписка (1.64% + НДС)</span><span class="wo-sum" id="yd-comm-s" style="color:var(--red)">—</span></div>
+      <div class="wo-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px">
+        <span class="wo-name" style="font-weight:600;color:var(--text)">✅ Чистыми к получению</span>
+        <span class="wo-sum" id="yd-net" style="color:var(--green);font-size:15px">—</span>
+      </div>
+    </div>
+
+    <div class="amount-row" style="margin-top:10px">
+      <span class="cur">₽</span>
+      <input class="amount-input" type="number" id="v-yandex" placeholder="Сумма к получению (чистыми)">
+    </div>
+  </div>
+
+  <!-- ══ РАСХОДЫ ══ -->
+  <div class="section-label">📉 Расходы</div>
+
+  <!-- Расходы расчётный счёт -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon blue">🏦</div>
+      <div>
+        <div class="card-title">Расходы — Расчётный счёт</div>
+        <div class="card-sub">По поставщикам — сумма считается автоматически</div>
+      </div>
+    </div>
+
+    <div class="supplier-list">
+      <div class="supplier-row">
+        <input class="supplier-name" type="text" placeholder="Поставщик 1" id="sup-name-1">
+        <div class="supplier-amount-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="supplier-amount dept-input" type="number" id="sup-1" placeholder="0" oninput="updateBankTotal()">
+        </div>
+      </div>
+      <div class="supplier-row">
+        <input class="supplier-name" type="text" placeholder="Поставщик 2" id="sup-name-2">
+        <div class="supplier-amount-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="supplier-amount dept-input" type="number" id="sup-2" placeholder="0" oninput="updateBankTotal()">
+        </div>
+      </div>
+      <div class="supplier-row">
+        <input class="supplier-name" type="text" placeholder="Поставщик 3" id="sup-name-3">
+        <div class="supplier-amount-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="supplier-amount dept-input" type="number" id="sup-3" placeholder="0" oninput="updateBankTotal()">
+        </div>
+      </div>
+      <div class="supplier-row">
+        <input class="supplier-name" type="text" placeholder="Поставщик 4" id="sup-name-4">
+        <div class="supplier-amount-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="supplier-amount dept-input" type="number" id="sup-4" placeholder="0" oninput="updateBankTotal()">
+        </div>
+      </div>
+    </div>
+
+    <div class="split-total-row" style="margin-top:10px">
+      <span>Итого по счёту</span>
+      <strong id="total-bank-exp">0 ₽</strong>
+    </div>
+    <!-- hidden field for calculate() compatibility -->
+    <input type="hidden" id="v-bank-exp" value="0">
+  </div>
+
+  <!-- Расходы наличка — по отделам -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon red">💵</div>
+      <div>
+        <div class="card-title">Расходы — Наличка</div>
+        <div class="card-sub">По отделам: кухня, бар, зал, тара</div>
+      </div>
+    </div>
+
+    <div class="dept-grid">
+      <div class="dept-field">
+        <div class="dept-label">🍳 Кухня</div>
+        <div class="dept-input-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="dept-input" type="number" id="v-exp-kitchen" placeholder="0" oninput="updateCashExpTotal()">
+        </div>
+      </div>
+
+      <div class="dept-field">
+        <div class="dept-label">🍹 Бар</div>
+        <div class="dept-input-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="dept-input" type="number" id="v-exp-bar" placeholder="0" oninput="updateCashExpTotal()">
+        </div>
+      </div>
+
+      <div class="dept-field">
+        <div class="dept-label">🪑 Зал</div>
+        <div class="dept-input-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="dept-input" type="number" id="v-exp-hall" placeholder="0" oninput="updateCashExpTotal()">
+        </div>
+      </div>
+
+      <div class="dept-field">
+        <div class="dept-label">📦 Тара</div>
+        <div class="dept-input-wrap">
+          <span class="cur-sm">₽</span>
+          <input class="dept-input" type="number" id="v-exp-tara" placeholder="0" oninput="updateCashExpTotal()">
+        </div>
+      </div>
+    </div>
+
+    <div class="split-total-row" style="margin-top:10px">
+      <span>Итого расходы наличкой</span>
+      <strong id="total-cash-exp">0 ₽</strong>
+    </div>
+  </div>
+
+  <!-- Зарплата -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon orange">👥</div>
+      <div>
+        <div class="card-title">Зарплата</div>
+        <div class="card-sub">Выплаты сотрудникам за смену (наличка)</div>
+      </div>
+    </div>
+    <div class="amount-row">
+      <span class="cur">₽</span>
+      <input class="amount-input" type="number" id="v-salary" placeholder="Зарплата">
+    </div>
+  </div>
+
+  <!-- ══ СПИСАНИЯ ══ -->
+  <div class="section-label">📋 Списания <span style="font-size:9px;color:var(--text3);letter-spacing:0;text-transform:none;font-family:Manrope,sans-serif;font-weight:400">(авторасчёт по справочнику цен)</span></div>
+
+  <!-- Справочник цен -->
+  <div class="card" id="price-catalog-card">
+    <div class="card-header" onclick="toggleCatalog()" style="cursor:pointer">
+      <div class="card-icon purple">📖</div>
+      <div style="flex:1">
+        <div class="card-title">Справочник цен (₽ за кг)</div>
+        <div class="card-sub">Заполни один раз — сохраняется в браузере</div>
+      </div>
+      <span id="catalog-toggle-icon" style="color:var(--text3);font-size:18px">▾</span>
+    </div>
+    <div id="price-catalog" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="file" id="f-iiko-prices" accept=".xlsx,.xls" style="display:none">
+        <button class="upload-btn" onclick="document.getElementById('f-iiko-prices').click()" style="flex:1;margin-bottom:0">
+          🔄 Обновить из iiko xlsx
+        </button>
+        <button class="upload-btn" onclick="addPriceRow()" style="flex:1;margin-bottom:0">+ Добавить продукт</button>
+      </div>
+      <div style="margin-bottom:8px">
+        <input type="text" id="price-search" placeholder="🔍 Поиск продукта..." 
+          style="width:100%;background:var(--s3);border:1.5px solid var(--border2);border-radius:8px;padding:7px 10px;color:var(--text);font-family:Manrope,sans-serif;font-size:13px;outline:none;"
+          oninput="filterPrices(this.value)">
+      </div>
+      <div class="price-catalog-grid" id="price-rows"></div>
+      <div id="price-count" style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- Ввод списаний -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon purple">🗑️</div>
+      <div>
+        <div class="card-title">Списания — вставь текст</div>
+        <div class="card-sub">Формат: Продукт — 500 грамм. (одна строка = одна позиция)</div>
+      </div>
+    </div>
+    <textarea class="notes-input" id="v-writeoff-text" rows="7"
+      placeholder="Блины — 321 грамм.&#10;Фондан — 200 грамм.&#10;Филе куриное — 1100 грамм.&#10;Картофель — 980 грамм."
+      oninput="calcWriteoff()"></textarea>
+
+    <button class="upload-btn" onclick="calcWriteoff()" style="margin-top:8px;border-style:solid;border-color:var(--purple);color:#c4a0ff">
+      ⚡ Рассчитать стоимость списаний
+    </button>
+
+    <!-- Result table -->
+    <div id="writeoff-result" style="display:none;margin-top:12px">
+      <div class="sum-group-label" style="margin-bottom:8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Расшифровка</div>
+      <div id="writeoff-rows"></div>
+      <div class="split-total-row" style="margin-top:8px">
+        <span>💰 Итого стоимость списаний</span>
+        <strong id="writeoff-total-sum" style="color:#c4a0ff">0 ₽</strong>
+      </div>
+      <div class="ai-status" id="writeoff-unknown" style="margin-top:6px;color:var(--text3)"></div>
+    </div>
+  </div>
+
+  <!-- Инкассация -->
+  <div class="section-label">🏦 Инкассация</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon blue">💼</div>
+      <div>
+        <div class="card-title">Инкассация (Руслан)</div>
+        <div class="card-sub">Сумма, переданная финансисту</div>
+      </div>
+    </div>
+    <div class="amount-row">
+      <span class="cur">₽</span>
+      <input class="amount-input" type="number" id="v-inkass" placeholder="Сумма инкассации">
+    </div>
+  </div>
+
+  <!-- Примечания -->
+  <div class="section-label">📝 Примечания</div>
+  <div class="card">
+    <textarea class="notes-input" id="notes" placeholder="Пометки по смене, нестандартные ситуации…"></textarea>
+  </div>
+
+  <!-- Кнопки -->
+  <div class="btn-row">
+    <button class="btn-calc" onclick="calculate()">⚡ РАССЧИТАТЬ СМЕНУ</button>
+    <button class="btn-excel show" id="excelBtn" onclick="exportExcel()">📊 Excel</button>
+  </div>
+  <button class="btn-secondary" id="saveShiftBtn" onclick="saveShift()" style="display:none;margin-top:8px;width:100%;padding:11px;border-radius:11px;background:transparent;border:1px solid var(--green);color:var(--green);font-family:Manrope,sans-serif;font-size:13.5px;cursor:pointer;">
+    💾 Сохранить смену в историю
+  </button>
+
+  <!-- ИТОГ -->
+  <div class="summary" id="summary">
+    <div class="summary-header">ИТОГ СМЕНЫ</div>
+
+    <div class="sum-group">
+      <div class="sum-group-label">Выручка</div>
+      <div class="sum-row"><span class="sum-label">🍽️ Ресторан — наличка</span><span class="sum-val pos" id="r-rest-cash">—</span></div>
+      <div class="sum-row"><span class="sum-label">🍽️ Ресторан — карта</span><span class="sum-val pos" id="r-rest-card">—</span></div>
+      <div class="sum-row"><span class="sum-label">🎠 Клуб — наличка</span><span class="sum-val pos" id="r-club-cash">—</span></div>
+      <div class="sum-row"><span class="sum-label">🎠 Клуб — карта</span><span class="sum-val pos" id="r-club-card">—</span></div>
+      <div class="sum-row"><span class="sum-label">🟡 Яндекс Еда</span><span class="sum-val pos" id="r-yandex">—</span></div>
+      <div class="sum-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+        <span class="sum-label" style="font-weight:600;color:var(--text)">Итого выручка</span>
+        <span class="sum-val pos" id="r-total-revenue" style="font-size:15px">—</span>
+      </div>
+    </div>
+
+    <div class="sum-group">
+      <div class="sum-group-label">Расходы (денежные)</div>
+      <div class="sum-row"><span class="sum-label">🍳 Кухня — наличка</span><span class="sum-val neg" id="r-exp-kitchen">—</span></div>
+      <div class="sum-row"><span class="sum-label">🍹 Бар — наличка</span><span class="sum-val neg" id="r-exp-bar">—</span></div>
+      <div class="sum-row"><span class="sum-label">🪑 Зал — наличка</span><span class="sum-val neg" id="r-exp-hall">—</span></div>
+      <div class="sum-row"><span class="sum-label">📦 Тара — наличка</span><span class="sum-val neg" id="r-exp-tara">—</span></div>
+      <div class="sum-row"><span class="sum-label">🏦 Расчётный счёт</span><span class="sum-val neg" id="r-bank-exp">—</span></div>
+      <div class="sum-row"><span class="sum-label">👥 Зарплата</span><span class="sum-val neg" id="r-salary">—</span></div>
+      <div class="sum-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+        <span class="sum-label" style="font-weight:600;color:var(--text)">Итого расходы</span>
+        <span class="sum-val neg" id="r-total-expenses" style="font-size:15px">—</span>
+      </div>
+    </div>
+
+    <div class="sum-group">
+      <div class="sum-row"><span class="sum-label">🗑️ Списания (только учёт)</span><span class="sum-val neu" id="r-writeoff">—</span></div>
+    </div>
+
+    <div class="sum-group">
+      <div class="sum-row"><span class="sum-label">💼 Инкассация (Руслан)</span><span class="sum-val neu" id="r-inkass">—</span></div>
+    </div>
+  </div>
+
+  <!-- НАЛИЧКА В КАССЕ -->
+  <div class="cash-highlight" id="cashHighlight">
+    <div class="cash-highlight-title">💵 Наличка в кассе на конец смены</div>
+    <div class="cash-hl-row"><span class="hl-label">🍽️ Ресторан — наличка</span><span class="hl-val pos" id="ch-rest-cash">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">🎠 Детский клуб — наличка</span><span class="hl-val pos" id="ch-club-cash">—</span></div>
+    <div class="cash-hl-row" style="padding-top:8px;margin-top:4px;border-top:1px solid rgba(62,207,122,.15)">
+      <span class="hl-label" style="color:var(--text);font-weight:600">Итого пришло наличкой</span>
+      <span class="hl-val pos" id="ch-total-in">—</span>
+    </div>
+    <div class="cash-hl-row"><span class="hl-label">🍳 − Кухня</span><span class="hl-val neg" id="ch-exp-kitchen">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">🍹 − Бар</span><span class="hl-val neg" id="ch-exp-bar">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">🪑 − Зал</span><span class="hl-val neg" id="ch-exp-hall">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">📦 − Тара</span><span class="hl-val neg" id="ch-exp-tara">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">👥 − Зарплата</span><span class="hl-val neg" id="ch-salary">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">💼 − Инкассация (Руслан)</span><span class="hl-val neu" id="ch-inkass">—</span></div>
+    <div class="cash-hl-total">
+      <span class="cash-hl-total-label">НАЛИЧКА В КАССЕ</span>
+      <span class="cash-hl-total-val" id="ch-balance">—</span>
+    </div>
+  </div>
+
+</main>
+
+<!-- AI STRIP -->
+<div class="ai-strip">
+  <div class="ai-reply" id="aiReply"></div>
+  <div class="ai-strip-inner">
+    <textarea class="ai-strip-input" id="aiInput" placeholder="Спроси что-то по кассе…" rows="1"></textarea>
+    <button class="ai-strip-send" id="aiSend" onclick="askAI()">
+      <svg width="15" height="15" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── default date
+document.getElementById('shiftDate').value = new Date().toISOString().slice(0,10);
+
+// ═══ IIKO API — загрузка по кнопке через Netlify Function ═══
+async function loadFromIiko() {
+  const st = document.getElementById('s-rest-cash-photo');
+  const date = document.getElementById('shiftDate')?.value || new Date().toISOString().slice(0,10);
+
+  st.className = 'ai-status loading';
+  st.innerHTML = '<span class="spin"></span>Загружаю отчёт из iiko…';
+
+  try {
+    const res = await fetch('/.netlify/functions/iiko-report?date=' + encodeURIComponent(date));
+    const data = await res.json();
+
+    console.log('IIKO FUNCTION RESPONSE:', data);
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Ошибка загрузки iiko');
+    }
+
+    const cash = Math.round(Number(data.cash) || 0);
+    const card = Math.round(Number(data.card) || 0);
+
+    document.getElementById('v-rest-cash').value = cash;
+    document.getElementById('v-rest-card').value = card;
+    updateSplitTotal('rest');
+
+    st.className = 'ai-status ok';
+    st.textContent = `✅ Из iiko: наличка ${fmt(cash)}, карта ${fmt(card)} — проверь`;
+  } catch (e) {
+    console.error('IIKO LOAD ERROR:', e);
+    st.className = 'ai-status err';
+    st.textContent = '❌ iiko API: ' + e.message;
+  }
+}
+
+// ═══ iiko "Отчет по чекам" xlsx parser ═══
+// Колонки: "Тип операции", "Сумма, оплаченная наличными", "Сумма, оплаченная по кредитным картам"
+// Суммируем только строки с типом "Продажа"
+async function parseIikoReport(file, statusId) {
+  const st = document.getElementById(statusId);
+  st.className='ai-status loading'; st.innerHTML='<span class="spin"></span>Читаю отчёт iiko…';
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+    // Find header row with "Тип операции"
+    let headerRow = -1, colType = -1, colCash = -1, colCard = -1;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+      const row = rows[i].map(c => String(c || ''));
+      const ti = row.findIndex(c => c.includes('Тип операции'));
+      if (ti >= 0) {
+        headerRow = i; colType = ti;
+        colCash = row.findIndex(c => c.includes('наличными'));
+        colCard = row.findIndex(c => c.includes('кредитным картам') || c.includes('кредитных карт'));
+        break;
+      }
+    }
+
+    if (headerRow < 0 || colCash < 0) {
+      st.className='ai-status err'; st.textContent='⚠️ Формат не распознан — введи вручную'; return;
+    }
+
+    let cashTotal = 0, cardTotal = 0;
+    for (let i = headerRow + 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || String(row[colType]||'') !== 'Продажа') continue;
+      cashTotal += parseFloat(String(row[colCash]||'0').replace(/\s/g,'').replace(',','.')) || 0;
+      if (colCard >= 0) cardTotal += parseFloat(String(row[colCard]||'0').replace(/\s/g,'').replace(',','.')) || 0;
+    }
+
+    document.getElementById('v-rest-cash').value = Math.round(cashTotal);
+    document.getElementById('v-rest-card').value = Math.round(cardTotal);
+    updateSplitTotal('rest');
+    st.className='ai-status ok';
+    st.textContent = `✅ Наличка ${fmt(Math.round(cashTotal))}, карта ${fmt(Math.round(cardTotal))} — проверь`;
+  } catch(e) {
+    st.className='ai-status err'; st.textContent='❌ Ошибка чтения — введи вручную';
+  }
+}
+
+document.getElementById('f-rest-cash-photo').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  // show chip
+  const row = document.getElementById('t-rest-cash-photo');
+  row.innerHTML = '';
+  const chip = document.createElement('div'); chip.className='file-chip';
+  chip.textContent = '📊 ' + file.name; row.appendChild(chip);
+  // parse
+  await parseIikoReport(file, 's-rest-cash-photo');
+  // reset so same file can be re-uploaded
+  e.target.value = '';
+});
+
+// ── Yandex Eda xlsx parser
+document.getElementById('f-yandex').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const row = document.getElementById('t-yandex');
+  row.innerHTML = ''; 
+  const chip = document.createElement('div'); chip.className='file-chip';
+  chip.textContent = '📊 ' + file.name; row.appendChild(chip);
+  const st = document.getElementById('s-yandex');
+  st.className='ai-status loading'; st.innerHTML='<span class="spin"></span>Читаю отчёт Яндекс Еды…';
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+    // Find column indices from header row
+    const header = rows[0].map(c => String(c||'').toLowerCase());
+    const colAmount = header.findIndex(h => h.includes('сумма заказа'));
+    const colStatus = header.findIndex(h => h.includes('статус'));
+    const colType   = header.findIndex(h => h.includes('тип доставки'));
+
+    if (colAmount < 0 || colStatus < 0) {
+      st.className='ai-status err'; st.textContent='⚠️ Формат не распознан — введи вручную'; return;
+    }
+
+    // Commissions (with VAT 20%)
+    const COMM_DELIVERY = 0.2917 * 1.20;  // 29.17% + НДС
+    const COMM_PICKUP   = 0.1667 * 1.20;  // 16.67% + НДС
+    const COMM_SUB      = 0.0164 * 1.20;  // 1.64% подписка + НДС
+
+    let grossDelivery=0, grossPickup=0, orders=0;
+    for (let i=1; i<rows.length; i++) {
+      const r = rows[i];
+      if (!r || String(r[colStatus]||'') !== 'Завершен') continue;
+      const amt = parseFloat(String(r[colAmount]||'0').replace(',','.')) || 0;
+      if (!amt) continue;
+      orders++;
+      const dtype = String(r[colType]||'').toLowerCase();
+      if (dtype.includes('доставк')) grossDelivery += amt;
+      else grossPickup += amt;
+    }
+
+    const gross = grossDelivery + grossPickup;
+    const commD = grossDelivery * COMM_DELIVERY;
+    const commP = grossPickup * COMM_PICKUP;
+    const commS = gross * COMM_SUB;
+    const totalComm = commD + commP + commS;
+    const net = Math.round(gross - totalComm);
+
+    // Show breakdown
+    const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    set('yd-orders', orders + ' шт.');
+    set('yd-gross',  fmt(Math.round(gross)));
+    set('yd-comm-d', '−' + fmt(Math.round(commD + commS)));
+    set('yd-comm-s', '−' + fmt(Math.round(commS)));
+    set('yd-net',    fmt(net));
+    document.getElementById('yandex-breakdown').style.display = 'block';
+
+    // Set net amount in field
+    document.getElementById('v-yandex').value = net;
+
+    st.className='ai-status ok';
+    st.textContent = `✅ Брутто ${fmt(Math.round(gross))}, комиссия ${fmt(Math.round(totalComm))}, к получению ${fmt(net)}`;
+    e.target.value = '';
+  } catch(err) {
+    st.className='ai-status err'; st.textContent='❌ Ошибка чтения файла — введи вручную';
+  }
+});
+
+// ── other uploads
+const OTHER_UPLOADS = [
+  { fid:'f-club',     tid:'t-club',     sid:'s-club',     vid:'v-club-cash', label:'выручку детского клуба наличными' },
+  { fid:'f-bank-exp', tid:'t-bank-exp', sid:'s-bank-exp', vid:'v-bank-exp',  label:'общую сумму расходов по расчётному счёту' },
+];
+
+// ── dept expense uploads
+const DEPT_UPLOADS = [
+  { fid:'f-exp-kitchen', tid:'t-exp-kitchen', sid:'s-exp-kitchen', vid:'v-exp-kitchen', label:'сумму расходов по кухне' },
+  { fid:'f-exp-bar',     tid:'t-exp-bar',     sid:'s-exp-bar',     vid:'v-exp-bar',     label:'сумму расходов по бару' },
+  { fid:'f-exp-hall',    tid:'t-exp-hall',    sid:'s-exp-hall',    vid:'v-exp-hall',    label:'сумму расходов по залу' },
+  { fid:'f-exp-tara',    tid:'t-exp-tara',    sid:'s-exp-tara',    vid:'v-exp-tara',    label:'сумму расходов на тару и упаковку' },
+];
+
+// ── club CSV parser (формат: ИТОГО;;Наличка;550 / ;;Карта;500)
+document.getElementById('f-club').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files); if (!files.length) return;
+  renderThumbs(files, 't-club');
+  const st = document.getElementById('s-club');
+  const csvFile = Array.from(files).find(f => f.name.match(/\.csv$/i));
+  if (csvFile) {
+    st.className='ai-status loading'; st.innerHTML='<span class="spin"></span>Читаю отчёт клуба…';
+    try {
+      const text = await csvFile.text();
+      const lines = text.replace(/^\uFEFF/, '').split('\n').map(l => l.trim()).filter(Boolean);
+      let cash = 0, card = 0;
+      let inItogo = false;
+      for (const line of lines) {
+        const cols = line.split(';').map(c => c.trim());
+        // Detect ИТОГО section start
+        if (cols[0].toLowerCase().includes('итог')) inItogo = true;
+        if (!inItogo) continue;
+        const typeCol = cols[2] || '';
+        const sumCol  = cols[3] || cols[cols.length - 1];
+        const n = parseFloat(sumCol.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+        if (typeCol.toLowerCase().includes('налич')) cash = n;
+        if (typeCol.toLowerCase().includes('карт'))  card = n;
+      }
+      // fallback: sum from data rows if no ИТОГО breakdown
+      if (cash === 0 && card === 0) {
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(';').map(c => c.trim());
+          if (cols[0].toLowerCase().includes('итог')) break;
+          const type = (cols[2] || '').toLowerCase();
+          const n = parseFloat((cols[3] || cols[cols.length-1]).replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+          if (type.includes('налич')) cash += n;
+          else if (type.includes('карт')) card += n;
+        }
+      }
+      if (cash > 0 || card > 0) {
+        document.getElementById('v-club-cash').value = Math.round(cash);
+        document.getElementById('v-club-card').value = Math.round(card);
+        updateSplitTotal('club');
+        st.className='ai-status ok';
+        st.textContent = `✅ Клуб: наличка ${fmt(Math.round(cash))}, карта ${fmt(Math.round(card))}`;
+      } else {
+        st.className='ai-status err'; st.textContent='⚠️ Не нашёл суммы — введи вручную';
+      }
+    } catch { st.className='ai-status err'; st.textContent='❌ Ошибка чтения CSV'; }
+    return;
+  }
+  await extractAI(files, 's-club', 'v-club-cash', 'выручку детского клуба наличными');
+});
+
+[...OTHER_UPLOADS.filter(c=>c.fid!=='f-club'), ...DEPT_UPLOADS].forEach(cfg => {
+  const el = document.getElementById(cfg.fid); if (!el) return;
+  el.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files); if (!files.length) return;
+    renderThumbs(files, cfg.tid);
+    await extractAI(files, cfg.sid, cfg.vid, cfg.label);
+  });
+});
+
+// ── live totals
+function updateSplitTotal(which) {
+  const cash = parseFloat(document.getElementById(`v-${which}-cash`).value)||0;
+  const card = parseFloat(document.getElementById(`v-${which}-card`).value)||0;
+  document.getElementById(`total-${which}`).textContent = fmt(cash + card);
+}
+function updateBankTotal() {
+  const total = [1,2,3,4].reduce((s,i) => s + (parseFloat(document.getElementById(`sup-${i}`)?.value)||0), 0);
+  document.getElementById('total-bank-exp').textContent = fmt(total);
+  document.getElementById('v-bank-exp').value = total;
+}
+
+function updateCashExpTotal() {
+  const t = ['kitchen','bar','hall','tara'].reduce((s,d)=>s+(parseFloat(document.getElementById(`v-exp-${d}`).value)||0),0);
+  document.getElementById('total-cash-exp').textContent = fmt(t);
+}
+function updateWriteoffTotal() { /* deprecated */ }
+
+// ═══ PRICE CATALOG ═══
+const DEFAULT_PRICES = [{"name":"Coca-cola","price":66.67},{"name":"Coca-Cola стекло 0,33","price":79.38},{"name":"Fanta","price":59.49},{"name":"Sprite","price":17.39},{"name":"Авокадо","price":591.97},{"name":"Авокадо ПФ","price":946.09},{"name":"Айс кофе","price":471.47},{"name":"Айс кофе с урбечом","price":282.18},{"name":"Айс-латте","price":78.39},{"name":"Амаррети","price":130.0},{"name":"Американо","price":84.34},{"name":"ананас","price":244.99},{"name":"Анчоус","price":1629.33},{"name":"апельсин","price":327.19},{"name":"Арахис с двойной обжаренной карамелью","price":137.69},{"name":"Базилик зеленый","price":2970.0},{"name":"Баклажан","price":283.94},{"name":"Бамбл","price":356.92},{"name":"Банан","price":242.45},{"name":"Банановый коктейль","price":490.99},{"name":"Баунти","price":140.0},{"name":"Бефстроганов","price":217.77},{"name":"Блины","price":255.19},{"name":"Блины с нутеллой","price":287.63},{"name":"Блины с шоколадно-творожным мусом","price":179.31},{"name":"Болгарский перец","price":351.88},{"name":"Болгарский перец (светофор)","price":275.53},{"name":"Боул с курицей","price":138.35},{"name":"брауни","price":80.0},{"name":"Брауни","price":80.0},{"name":"Брокколи","price":277.1},{"name":"булочка на хот дог","price":34.32},{"name":"булочки на бургер","price":247.82},{"name":"Бургер говяжий","price":166.17},{"name":"Бургер куриный","price":115.14},{"name":"Бургер Планета","price":161.17},{"name":"Ванильный раф","price":108.7},{"name":"Ванильный сахар","price":600.01},{"name":"Варенье 100 гм","price":72.86},{"name":"Варенье Белая черешня","price":75.41},{"name":"варенье белая черешня","price":502.72},{"name":"Варенье Клубника","price":45.0},{"name":"варенье клубника","price":300.0},{"name":"Варенье Малина","price":109.29},{"name":"Васаби","price":587.71},{"name":"ВИКО сок натуральный","price":145.5},{"name":"Вино","price":1707.14},{"name":"вода 0,6 пластик  (горная простая)","price":15.69},{"name":"Вода 60 пластиковая","price":15.69},{"name":"вода для тех карт","price":31.99},{"name":"Вода негазированная","price":56.25},{"name":"вода негазированная 0,5 (ТБАУ)","price":56.25},{"name":"Вяленый томат","price":1006.8},{"name":"Газированная вода для лимонадов (фрустайл)","price":95.83},{"name":"Галактика","price":121.32},{"name":"Гвоздика","price":1500.0},{"name":"Гвоздика БАР доп","price":37.5},{"name":"Говяжая вырезка (корейка)","price":1200.0},{"name":"Говяжая котлета","price":759.95},{"name":"Говяжий жир","price":300.0},{"name":"говяжья вырезка (жарен)","price":1714.29},{"name":"Голубая лагуна","price":256.68},{"name":"Голубика","price":1424.55},{"name":"Горчица дижонская","price":374.14},{"name":"Горчичный соус","price":516.83},{"name":"Гранат","price":252.44},{"name":"Гранат-маракуйя","price":390.06},{"name":"Гранат/кола/лайм/мелисса","price":183.68},{"name":"Гранат/маракуйя","price":580.15},{"name":"Гранатовый ЧАЙ","price":60.63},{"name":"грецкий орех","price":788.24},{"name":"Греческий салат","price":119.72},{"name":"Грибная приправа","price":747.47},{"name":"Грибной крем суп","price":79.76},{"name":"Грибной крем суп (база)","price":192.86},{"name":"Грибы шампиньоны","price":351.53},{"name":"Грибы шампиньоны ПФ","price":392.54},{"name":"груша","price":278.53},{"name":"Дагестан завтрак","price":123.43},{"name":"Демигляс","price":298.31},{"name":"Довгань Корнишоны","price":413.4},{"name":"Драники","price":89.18},{"name":"Жаркое с говядиной","price":229.62},{"name":"Жаркое с курицей","price":162.35},{"name":"Жидкий дым","price":120.0},{"name":"Жульен","price":559.24},{"name":"Заварка калмыкский чай","price":294.91},{"name":"Завтрак классический","price":96.51},{"name":"Завтрак немецкий","price":136.73},{"name":"замес на чуду тесто","price":52.75},{"name":"Зеленое яблоко/Саган дайля/киви","price":95.54},{"name":"Икра тобико","price":2190.0},{"name":"Имбирно-медовый","price":75.86},{"name":"имбирно-чесночный соус","price":543.25},{"name":"Имбирь","price":766.35},{"name":"Имбирь ДОП","price":10.42},{"name":"Имбирь маринованый","price":138.1},{"name":"Йогурт греческий","price":460.12},{"name":"Какао","price":36.13},{"name":"какао","price":44.11},{"name":"Калифорния с креветкой","price":145.92},{"name":"Калифорния с лососем","price":151.26},{"name":"Калмыцкий чай","price":59.48},{"name":"Кальмара","price":601.34},{"name":"Кампанелли","price":388.56},{"name":"Каперсы","price":756.63},{"name":"Капучино","price":152.9},{"name":"Картофель","price":151.25},{"name":"Картофель Бейби (мини)","price":79.38},{"name":"Картошка по деревенски","price":264.0},{"name":"Картошка по деревенски (блюдо)","price":39.6},{"name":"Картошка фри","price":196.0},{"name":"Каша овсяная","price":69.93},{"name":"Каша рисовая","price":73.05},{"name":"Кедровые орехи","price":2200.0},{"name":"Кетчуп томатный","price":257.17},{"name":"Кефир 2.5 %","price":155.56},{"name":"киви","price":193.63},{"name":"Кинза","price":417.94},{"name":"Клубника","price":1029.25},{"name":"Клубника (заморож)","price":550.0},{"name":"Клюква с/м","price":827.43},{"name":"Кляр","price":135.22},{"name":"Кокосовое молоко","price":388.39},{"name":"Коктейль Ванильный","price":321.12},{"name":"Коктейль клубничный","price":519.51},{"name":"Коктейль шоколадный","price":331.34},{"name":"кола 0,25 (лимон-лайм) стекло","price":66.67},{"name":"Колбаса охотничая","price":810.8},{"name":"колбаса пеперони","price":1071.0},{"name":"Корица (палочки)","price":1200.0},{"name":"Кости говяжьи","price":119.29},{"name":"Котлета по домашнему с картофельным пюре","price":89.17},{"name":"Креветки","price":1536.74},{"name":"Креметта","price":750.0},{"name":"Кукуруза консервированая","price":247.71},{"name":"Кукуруза початак","price":558.0},{"name":"Кукурузный крахмал","price":264.57},{"name":"Кунжут черно-белый","price":430.17},{"name":"Курага","price":452.33},{"name":"Кураговая каша","price":202.16},{"name":"курзе с мясом","price":239.85},{"name":"Курзе с мясом","price":62.78},{"name":"Куринный суп","price":77.64},{"name":"Куриное филе","price":400.0},{"name":"куриное филе (жарен)","price":533.33},{"name":"Куриное филе для роллоов","price":355.32},{"name":"Куриный бульон","price":727.0},{"name":"Куриный маринад","price":57.69},{"name":"Куриный стейк","price":166.12},{"name":"Курица в хлопьях","price":142.28},{"name":"Курица по фломандски","price":142.46},{"name":"Курица по французски","price":155.36},{"name":"Курица по-арабски","price":156.08},{"name":"Лавандовый","price":87.92},{"name":"Лайм","price":394.0},{"name":"Лапша Удон","price":266.67},{"name":"Лапша яичная","price":557.67},{"name":"Латте","price":56.95},{"name":"Лед","price":30.0},{"name":"Лемонграсс сушенный","price":1699.39},{"name":"Лепешка пшеничная","price":2.32},{"name":"Лимон","price":239.31},{"name":"Лимон ДОП","price":11.97},{"name":"лимонная кислота","price":333.48},{"name":"Лимоный цытрон (фреш)","price":255.43},{"name":"Лист нори (норм)","price":11.41},{"name":"Листья каффир - лайма","price":4850.0},{"name":"листья салата","price":716.63},{"name":"Листья салата","price":580.47},{"name":"Лола росса","price":1205.51},{"name":"Лосось (семга)","price":1724.48},{"name":"Лосось жареный","price":1996.01},{"name":"Лосось слабо соленый","price":1458.38},{"name":"Лук жареный (покупной)","price":830.67},{"name":"Лук зеленый","price":230.76},{"name":"Лук красный","price":81.32},{"name":"Лук красный (фиолет)","price":70.71},{"name":"Лук репчатый","price":35.25},{"name":"лук репчатый ПФ","price":40.98},{"name":"Лунго","price":38.36},{"name":"Майонез","price":190.03},{"name":"Малина (заморож)","price":863.49},{"name":"малиновое варенье","price":728.57},{"name":"Манная крупа","price":65.03},{"name":"Маслины","price":496.06},{"name":"Масло растительное","price":162.44},{"name":"Масло сливочное","price":690.0},{"name":"Мед","price":53.57},{"name":"Медальоны из говядины","price":237.37},{"name":"Мидии в раковине","price":767.43},{"name":"микс кислот","price":45.42},{"name":"микс море продуктов (салат)","price":1027.86},{"name":"микс море продуктов (том ям)","price":1113.77},{"name":"Микс салата","price":859.62},{"name":"Мицукан (уксус рисовый)","price":80.57},{"name":"Молоко 3,2 %","price":117.05},{"name":"Молоко ДОП","price":3.51},{"name":"Молочный пирог","price":160.0},{"name":"Молочный улун","price":93.59},{"name":"Морковный фреш","price":28.67},{"name":"Морковь","price":47.79},{"name":"Морковь ПФ","price":95.58},{"name":"Мороженное (1 шарик)","price":51.48},{"name":"мороженое ваниль","price":572.0},{"name":"Мохито классический","price":262.98},{"name":"Мохито клубничный","price":294.21},{"name":"Мука","price":61.97},{"name":"Мука кукурузная","price":125.96},{"name":"Мука темпурная","price":81.15},{"name":"Мякоть говяжья","price":970.0},{"name":"Мята","price":608.96},{"name":"Мята ДОП","price":6.09},{"name":"Наггетсы","price":72.41},{"name":"Натульный сок ВИКО","price":145.5},{"name":"начинка на курзе","price":643.44},{"name":"начинка на чуду с мясом","price":750.58},{"name":"начинка на чуду с творогом","price":581.64},{"name":"Нерри","price":751.55},{"name":"Нутелла","price":1951.22},{"name":"Облепиха с/м","price":568.0},{"name":"Облепиховый","price":147.88},{"name":"Овощная нарезка","price":146.88},{"name":"Овсяная круппа","price":76.76},{"name":"Огурец","price":116.87},{"name":"Огурцы (маринованные)","price":140.4},{"name":"Ойси","price":165.57},{"name":"Оливки","price":544.47},{"name":"Оливковое масло","price":359.52},{"name":"Орегано","price":1360.11},{"name":"Орео","price":598.18},{"name":"Ореховый соус","price":508.34},{"name":"Орешки с вареной сгущенкой","price":185.0},{"name":"Панировочные сухари","price":187.5},{"name":"Панкейки (заготовка)","price":896.73},{"name":"Панкейки десерт","price":379.64},{"name":"Паприка сладкая","price":430.03},{"name":"Пасировка","price":106.72},{"name":"Паста Нерри с морепродутами","price":227.22},{"name":"Паста пенне","price":353.87},{"name":"Паста Фетучини","price":714.06},{"name":"Пене с курицей","price":147.32},{"name":"Перепилиное яйцо","price":6.13},{"name":"Перец молотый","price":659.95},{"name":"Песто соус","price":1276.09},{"name":"печень куриная","price":344.11},{"name":"Печень куриная","price":238.0},{"name":"печенье орео","price":20.73},{"name":"Пита","price":36.52},{"name":"Пицца 4 сыра","price":160.84},{"name":"Пицца ассорти","price":144.04},{"name":"Пицца бургер","price":194.32},{"name":"Пицца жульен","price":157.49},{"name":"Пицца куринная","price":172.83},{"name":"Пицца Маргарита","price":133.89},{"name":"Пицца охотничая","price":181.29},{"name":"Пицца пеперони","price":212.01},{"name":"Пицца песто","price":196.16},{"name":"Пицца цезарь с курицей","price":140.75},{"name":"Плавленый сыр","price":700.46},{"name":"Планета ролл","price":118.51},{"name":"Плитка","price":139.0},{"name":"плитка шоколад","price":139.0},{"name":"Помидор","price":334.62},{"name":"Птитим","price":222.49},{"name":"птитим","price":96.48},{"name":"Пуэр","price":61.99},{"name":"Пышки","price":447.41},{"name":"Пюре Ананас Агробар","price":820.0},{"name":"Пюре картофельное","price":221.19},{"name":"Пюре Маракуя 1 кг Агробар","price":1282.0},{"name":"Разрыхлитель","price":303.0},{"name":"Раф миндальный урбеч","price":127.19},{"name":"Рис","price":108.0},{"name":"Рис для роллов","price":185.76},{"name":"Рис с овощами","price":60.45},{"name":"Рис тамаша басмати","price":263.64},{"name":"Рис Тамаша Басмати П/Ф","price":108.05},{"name":"Розмарин","price":1649.38},{"name":"Ролл Цезарь запечённый","price":119.54},{"name":"Ролл Цезарь с креветкой","price":97.75},{"name":"Ролл Цезарь с курицей","price":87.84},{"name":"Ролл Чикенчиз","price":93.16},{"name":"Руколла","price":1091.56},{"name":"рычал-су 0,5","price":81.08},{"name":"Рычал-су 0,5","price":81.08},{"name":"Садж говяжий","price":404.62},{"name":"Садж куринный","price":331.83},{"name":"салат микс салата","price":847.14},{"name":"Салат с морепродуктами","price":204.48},{"name":"Салат с хрустящими баклажанами","price":119.12},{"name":"Салат Тбилиси","price":171.25},{"name":"сальса","price":296.33},{"name":"Самурай ролл","price":94.11},{"name":"Сахар","price":88.21},{"name":"Сахар тростниковый","price":375.55},{"name":"Сахарная пудра","price":202.48},{"name":"сахарный сироп","price":64.12},{"name":"Свичили","price":350.76},{"name":"Сет \"Планета\"","price":788.82},{"name":"Сет \"Семья\"","price":487.92},{"name":"Сироп","price":20.78},{"name":"сироп","price":831.29},{"name":"Сироп Маракуйя","price":1220.0},{"name":"Сладкий Чили","price":428.27},{"name":"Сливки","price":6.94},{"name":"Сливки 10%","price":231.22},{"name":"Сливки 22%","price":408.78},{"name":"Сливки ДОП","price":6.94},{"name":"Сливочный соус","price":642.12},{"name":"Сметана","price":250.4},{"name":"Смузи Пеликан","price":131.73},{"name":"Смузи Ягодный","price":129.58},{"name":"Соевый соус","price":92.38},{"name":"Соль","price":23.57},{"name":"Сосиски","price":410.14},{"name":"Сосиски горские Хицунов Халяль","price":382.57},{"name":"Соус барбекю","price":465.59},{"name":"Соус греческий (боул)","price":489.64},{"name":"Соус Кунжутный","price":562.5},{"name":"Соус макси-бургер","price":603.8},{"name":"соус на боул","price":489.16},{"name":"Соус спайс","price":135.74},{"name":"Соус Удон","price":14.77},{"name":"Соус Унаги","price":308.38},{"name":"спрайт 0,25","price":17.39},{"name":"Стейк говяжий","price":1200.0},{"name":"Стейк из семги","price":301.03},{"name":"Стейк рибай","price":478.12},{"name":"Супер мука (для пиццы)","price":74.0},{"name":"сухари","price":247.82},{"name":"Сушенная колбаса","price":1.4},{"name":"Сыр брынза","price":500.0},{"name":"Сыр Моцарелла","price":490.0},{"name":"Сыр мягкий в расоле (ФЕТА)","price":920.0},{"name":"Сыр Пармезан","price":1446.04},{"name":"Сыр Сулугуни","price":789.94},{"name":"Сыр творожный","price":692.73},{"name":"Сыр Чедер","price":939.56},{"name":"Сырная шапка","price":312.87},{"name":"сырники","price":522.73},{"name":"Сырники","price":117.57},{"name":"Сырные палочки","price":83.24},{"name":"Сырный крем-суп","price":120.93},{"name":"Сырный омлет со шпинатом","price":66.48},{"name":"Сырный соус","price":471.5},{"name":"сырный соус для бургера","price":45.35},{"name":"Сырный суп база","price":324.84},{"name":"Сырок Школадный","price":200.0},{"name":"Сырок шоколадный","price":200.0},{"name":"Тайский Салат","price":200.44},{"name":"тарт ягодный","price":170.0},{"name":"Тарт ягодный","price":170.0},{"name":"Татаки","price":178.62},{"name":"Творог (9%)","price":627.58},{"name":"Творожный мусс","price":527.7},{"name":"Те гуань инь","price":31.99},{"name":"Тесто для пиццы","price":28.97},{"name":"Тесто на курзе","price":51.51},{"name":"тесто на фондан","price":802.96},{"name":"Тимьян","price":2156.51},{"name":"тирамису","price":210.0},{"name":"Тирамису","price":210.0},{"name":"Том ям","price":191.41},{"name":"Том ям (покупной) (паста)","price":1047.06},{"name":"Том ям заготовка","price":243.25},{"name":"томатный соус Мутти для пиццы","price":466.35},{"name":"Тоник","price":100.0},{"name":"Топинг шоколад","price":393.88},{"name":"Тропики","price":123.42},{"name":"Удон с курицей","price":115.46},{"name":"Укроп","price":338.0},{"name":"Урбеч","price":62.5},{"name":"Урбеч Миндальный","price":1571.03},{"name":"фанта 0,25","price":59.49},{"name":"Фарш куринный","price":373.25},{"name":"Фетучини с песто и сырным муссом","price":213.36},{"name":"Филадельфия","price":114.97},{"name":"Флэт Уайт","price":90.1},{"name":"Фокаччо песто-пармезан","price":83.04},{"name":"Фондан шоколадный","price":163.12},{"name":"Фреш апельсиновый","price":107.97},{"name":"Фруктовая нарезка","price":212.42},{"name":"Хлопья кукурузные","price":362.04},{"name":"Хот дог","price":111.58},{"name":"Хот дог \"King\"","price":99.98},{"name":"Цветная капуста","price":176.16},{"name":"Цезарь Салат (креветки)","price":175.06},{"name":"Цезарь Салат (куринный)","price":108.1},{"name":"Цезарь Салат (лосось)","price":184.94},{"name":"Цезарь соус","price":252.71},{"name":"Цукини","price":188.86},{"name":"Чабрец","price":1376.55},{"name":"Чабрец БАР ДОП","price":6.88},{"name":"Чай Ассам черный","price":1300.0},{"name":"Чай зеленый СЕНЧА (литр)","price":77.49},{"name":"Чай молочный улун","price":1760.0},{"name":"Чай пуэр шу","price":30.0},{"name":"Чай Сенча","price":1300.0},{"name":"Чай черный Ассам","price":77.49},{"name":"Черная смородина с/м","price":843.86},{"name":"Черника с/м","price":610.0},{"name":"Черри","price":510.89},{"name":"Чеснок","price":251.86},{"name":"Чечевица красная","price":188.36},{"name":"Чечевичный крем суп","price":47.07},{"name":"Чечевичный суп база","price":90.62},{"name":"Чуду с мясом","price":121.88},{"name":"Чуду с творогом","price":96.54},{"name":"Чука(водоросли)","price":335.83},{"name":"Шоколад калебаут (молочный)","price":1751.54},{"name":"Шоколадно-банановый","price":143.68},{"name":"Шпинат","price":294.14},{"name":"Щавелевый","price":226.25},{"name":"щавелевый","price":126.13},{"name":"Щавель","price":338.0},{"name":"Эби темпура Ролл","price":92.39},{"name":"Эби-темпура","price":128.97},{"name":"Эклер заварной","price":130.0},{"name":"Эклер сникерс","price":140.0},{"name":"Эклер шоколадный","price":130.0},{"name":"Эскимо","price":160.0},{"name":"эспрессо","price":1950.0},{"name":"Эспрессо","price":37.59},{"name":"Эспрессо тоник гранатовый","price":87.2},{"name":"Эспрессо Тоник классический","price":87.2},{"name":"Яблоко","price":136.29},{"name":"Яблоко зеленое (кухня)","price":160.0},{"name":"Яблочный фреш","price":68.15},{"name":"Ягодный","price":393.72},{"name":"Ягодный ЧАЙ","price":138.75},{"name":"Яйцо куриное","price":14.13}];
+
+function loadPrices() {
+  try { return JSON.parse(localStorage.getItem('planeta_prices') || 'null') || DEFAULT_PRICES; }
+  catch { return DEFAULT_PRICES; }
+}
+function savePrices() {
+  const rows = document.querySelectorAll('.price-row');
+  const prices = [];
+  rows.forEach(r => {
+    const name = r.querySelector('.price-name').value.trim();
+    const price = parseFloat(r.querySelector('.price-val').value) || 0;
+    if (name) prices.push({name, price});
+  });
+  localStorage.setItem('planeta_prices', JSON.stringify(prices));
+  return prices;
+}
+let _allPrices = [];
+
+function renderCatalog(filter='') {
+  _allPrices = loadPrices();
+  const container = document.getElementById('price-rows');
+  container.innerHTML = '';
+  const filtered = filter 
+    ? _allPrices.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
+    : _allPrices;
+  filtered.slice(0, 100).forEach(p => addPriceRowData(p.name, p.price));
+  const countEl = document.getElementById('price-count');
+  if (countEl) {
+    if (filter) countEl.textContent = `Показано ${Math.min(filtered.length,100)} из ${filtered.length} совпадений`;
+    else countEl.textContent = `Всего продуктов: ${_allPrices.length} (из iiko)`;
+  }
+}
+
+function filterPrices(val) {
+  renderCatalog(val);
+}
+
+// iiko xlsx updater for price catalog
+document.addEventListener('DOMContentLoaded', () => {
+  const iikoInput = document.getElementById('f-iiko-prices');
+  if (iikoInput) {
+    iikoInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      try {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+        const items = [];
+        const seen = new Set();
+        for (const row of rows) {
+          const priceRaw = row[8];
+          if (!priceRaw) continue;
+          const price = parseFloat(String(priceRaw).replace(',','.').replace('*',''));
+          if (!price || price <= 0) continue;
+          let name = row[1] || row[2] || row[3];
+          if (!name) continue;
+          name = String(name).trim();
+          for (const pre of ['т ','ПФ ','пф ']) {
+            if (name.toLowerCase().startsWith(pre.toLowerCase())) name = name.slice(pre.length);
+          }
+          name = name.trim();
+          if (!name || seen.has(name)) continue;
+          seen.add(name);
+          items.push({name, price: Math.round(price*100)/100});
+        }
+        items.sort((a,b) => a.name.localeCompare(b.name, 'ru'));
+        localStorage.setItem('planeta_prices', JSON.stringify(items));
+        renderCatalog();
+        alert(`✅ Загружено ${items.length} продуктов из iiko`);
+        e.target.value = '';
+      } catch(err) {
+        alert('❌ Ошибка чтения файла iiko');
+      }
+    });
+  }
+});
+function addPriceRow() {
+  addPriceRowData('', 0);
+  savePrices();
+}
+function addPriceRowData(name, price) {
+  const container = document.getElementById('price-rows');
+  const row = document.createElement('div');
+  row.className = 'price-row';
+  row.innerHTML = `
+    <input class="price-name" type="text" placeholder="Название продукта" value="${name}" oninput="savePrices()">
+    <input class="price-val" type="number" placeholder="₽/кг" value="${price||''}" oninput="savePrices()">
+    <button class="price-del" onclick="this.parentElement.remove();savePrices()">✕</button>
+  `;
+  container.appendChild(row);
+}
+function toggleCatalog() {
+  const el = document.getElementById('price-catalog');
+  const icon = document.getElementById('catalog-toggle-icon');
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? 'block' : 'none';
+  icon.textContent = hidden ? '▴' : '▾';
+  if (hidden) renderCatalog();
+}
+
+// ═══ WRITEOFF CALCULATOR ═══
+function calcWriteoff() {
+  const text = document.getElementById('v-writeoff-text').value.trim();
+  if (!text) return;
+  const prices = savePrices();
+
+  // Build lookup: lowercase name → price per kg
+  const lookup = {};
+  prices.forEach(p => { if (p.name) lookup[p.name.toLowerCase()] = p.price; });
+
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.endsWith(':'));
+  const resultRows = [];
+  let totalSum = 0;
+  const unknown = [];
+
+  lines.forEach(line => {
+    // Extract grams: "Филе куриное — 1100 грамм."
+    const gramsMatch = line.match(/(\d+[\d.,]*)\s*(грамм|г\.|г\b|kg|кг)/i);
+    const grams = gramsMatch ? parseFloat(gramsMatch[1].replace(',','.')) : null;
+
+    // Find product name by matching against catalog
+    let foundName = null, foundPrice = 0;
+    // Try longest match first
+    const sortedKeys = Object.keys(lookup).sort((a,b) => b.length - a.length);
+    for (const key of sortedKeys) {
+      if (line.toLowerCase().includes(key)) {
+        foundName = prices.find(p => p.name.toLowerCase() === key)?.name;
+        foundPrice = lookup[key];
+        break;
+      }
+    }
+
+    if (foundName && grams !== null && foundPrice > 0) {
+      const sum = Math.round((grams / 1000) * foundPrice);
+      totalSum += sum;
+      resultRows.push({name: `${foundName} — ${grams}г`, sum, known: true});
+    } else if (grams !== null) {
+      // Has grams but no price found
+      const cleanName = line.replace(/—.*$/, '').replace(/\d+.*$/,'').trim();
+      unknown.push(cleanName || line);
+      resultRows.push({name: line, sum: 0, known: false});
+    }
+    // Skip section headers like "Срок:", "Списания:", "Обед:", "Отход:"
+  });
+
+  // Render result
+  const rowsEl = document.getElementById('writeoff-rows');
+  rowsEl.innerHTML = '';
+  resultRows.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'wo-row';
+    div.innerHTML = `<span class="wo-name">${r.name}</span><span class="wo-sum ${r.known?'':'unknown'}">${r.known ? fmt(r.sum) : '— нет цены'}</span>`;
+    rowsEl.appendChild(div);
+  });
+
+  document.getElementById('writeoff-total-sum').textContent = fmt(totalSum);
+  document.getElementById('writeoff-result').style.display = 'block';
+
+  const unkEl = document.getElementById('writeoff-unknown');
+  if (unknown.length > 0) {
+    unkEl.textContent = `⚠️ Нет цены в справочнике: ${unknown.join(', ')} — добавь в справочник`;
+  } else {
+    unkEl.textContent = '✅ Все продукты найдены в справочнике';
+  }
+
+  // Save total for lastCalc
+  window._writeoffTotal = totalSum;
+}
+
+// Init catalog on load
+document.addEventListener('DOMContentLoaded', () => {
+  // Always update prices if iiko version changed
+  const storedVersion = localStorage.getItem('planeta_prices_version');
+  if (storedVersion !== 'iiko_v1') {
+    localStorage.setItem('planeta_prices', JSON.stringify(DEFAULT_PRICES));
+    localStorage.setItem('planeta_prices_version', 'iiko_v1');
+  }
+  renderHistoryList();
+});
+
+// ═══ SUPABASE CONFIG ═══
+const SUPA_URL = 'https://jsowljqavsxxajxgsulh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impzb3dsanFhdnN4eGFqeGdzdWxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NTQwMjcsImV4cCI6MjA5NDMzMDAyN30.6PpZFd8OGClj9CMuHbiIJdtLkUn0JUKz33FN2ifOPOE';
+
+async function supaFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method==='POST' ? 'resolution=merge-duplicates,return=minimal' : '',
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPA_URL + path, opts);
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ═══ HISTORY OF SHIFTS (Supabase) ═══
+function formatDate(dateKey) {
+  try { return new Date(dateKey+'T12:00:00').toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}); }
+  catch { return dateKey; }
+}
+
+async function saveShift() {
+  if (!lastCalc) { calculate(); }
+  const d = lastCalc;
+  const dateKey = d.date || new Date().toISOString().slice(0,10);
+
+  const snapshot = {
+    shift_date: dateKey,
+    data: {
+      ...d,
+      suppliers: [1,2,3,4].map(i => ({
+        name: document.getElementById(`sup-name-${i}`)?.value || `Поставщик ${i}`,
+        amount: parseFloat(document.getElementById(`sup-${i}`)?.value)||0
+      })),
+      writeoffText: document.getElementById('v-writeoff-text')?.value || '',
+      notes: document.getElementById('notes')?.value || '',
+      savedAt: new Date().toISOString(),
+    }
+  };
+
+  const btn = document.getElementById('saveShiftBtn');
+  btn.textContent = '⏳ Сохраняю...';
+  btn.disabled = true;
+
+  try {
+    await supaFetch('/rest/v1/shifts', 'POST', snapshot);
+    btn.textContent = '✅ Сохранено!';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    renderHistoryList();
+    setTimeout(() => {
+      btn.textContent = '💾 Сохранить смену в историю';
+      btn.disabled = false;
+    }, 2000);
+  } catch(err) {
+    btn.textContent = '❌ Ошибка — попробуй снова';
+    btn.disabled = false;
+    console.error(err);
+  }
+}
+
+async function loadShift(dateKey) {
+  try {
+    const rows = await supaFetch(`/rest/v1/shifts?shift_date=eq.${dateKey}&select=*`);
+    if (!rows || !rows.length) return;
+    const snap = rows[0];
+    const d = snap.data;
+
+    const setVal = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+    document.getElementById('shiftDate').value = d.date || dateKey;
+    setVal('v-rest-cash', d.restCash); setVal('v-rest-card', d.restCard);
+    setVal('v-club-cash', d.clubCash); setVal('v-club-card', d.clubCard);
+    setVal('v-yandex', d.yandex);
+    setVal('v-exp-kitchen', d.expK); setVal('v-exp-bar', d.expB);
+    setVal('v-exp-hall', d.expH); setVal('v-exp-tara', d.expT);
+    setVal('v-bank-exp', d.bankExp);
+    setVal('v-salary', d.salary);
+    setVal('v-inkass', d.inkass);
+    setVal('v-writeoff-text', d.writeoffText || '');
+    setVal('notes', d.notes || '');
+
+    if (d.suppliers) {
+      d.suppliers.forEach((s,i) => {
+        const ni = document.getElementById(`sup-name-${i+1}`);
+        const vi = document.getElementById(`sup-${i+1}`);
+        if(ni) ni.value = s.name || '';
+        if(vi) vi.value = s.amount || '';
+      });
+    }
+
+    updateSplitTotal('rest'); updateSplitTotal('club');
+    updateCashExpTotal(); updateBankTotal();
+    calculate();
+    toggleHistory();
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(err) {
+    alert('Ошибка загрузки смены');
+    console.error(err);
+  }
+}
+
+async function deleteShift(dateKey, e) {
+  e.stopPropagation();
+  if (!confirm(`Удалить смену за ${formatDate(dateKey)}?`)) return;
+  try {
+    await supaFetch(`/rest/v1/shifts?shift_date=eq.${dateKey}`, 'DELETE');
+    renderHistoryList();
+  } catch(err) { alert('Ошибка удаления'); }
+}
+
+async function renderHistoryList() {
+  const list = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">⏳ Загружаю...</div>';
+  empty.style.display = 'none';
+
+  try {
+    const rows = await supaFetch('/rest/v1/shifts?select=shift_date,data&order=shift_date.desc&limit=60');
+    list.innerHTML = '';
+    if (!rows || !rows.length) { empty.style.display='block'; return; }
+
+    rows.forEach(row => {
+      const d = row.data;
+      const dateKey = row.shift_date;
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.onclick = () => loadShift(dateKey);
+      const cashBal = d.cashBalance || 0;
+      const totalRev = d.totalRev || 0;
+      const totalExp = d.totalExp || 0;
+      item.innerHTML = `
+        <div>
+          <div class="history-item-date">${formatDate(dateKey)}</div>
+          <div class="history-item-info">Выручка: ${totalRev.toLocaleString('ru-RU')} ₽ · Расходы: ${totalExp.toLocaleString('ru-RU')} ₽</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div>
+            <div class="history-item-cash">${cashBal.toLocaleString('ru-RU')} ₽</div>
+            <div style="font-size:10px;color:var(--text3);text-align:right">наличка</div>
+          </div>
+          <button class="history-del" onclick="deleteShift('${dateKey}', event)">🗑️</button>
+        </div>`;
+      list.appendChild(item);
+    });
+  } catch(err) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--red);font-size:12px">❌ Ошибка загрузки — проверь соединение</div>';
+  }
+}
+
+function toggleHistory() {
+  const drawer = document.getElementById('history-drawer');
+  const isHidden = drawer.style.display === 'none';
+  drawer.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) renderHistoryList();
+}
+
+function renderThumbs(files, tid) {
+  const c = document.getElementById(tid); if(!c) return; c.innerHTML = '';
+  files.forEach(f => {
+    if (f.type.startsWith('image/')) {
+      const w = document.createElement('div'); w.className='thumb';
+      const img = document.createElement('img'); img.src=URL.createObjectURL(f);
+      w.appendChild(img); c.appendChild(w);
+    } else {
+      const chip = document.createElement('div'); chip.className='file-chip';
+      chip.textContent = (f.name.match(/\.pdf$/i)?'📄':'📊') + ' ' + f.name;
+      c.appendChild(chip);
+    }
+  });
+}
+
+async function fileToB64(file) {
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=()=>rej();
+    r.readAsDataURL(file);
+  });
+}
+
+async function extractAI(files, sid, vid, label) {
+  if (!sid) return;
+  const st = document.getElementById(sid);
+  const imgs = files.filter(f=>f.type.startsWith('image/'));
+  if (!imgs.length) { st.className='ai-status'; st.textContent='ℹ️ Файл добавлен — введи сумму вручную'; return; }
+  st.className='ai-status loading'; st.innerHTML='<span class="spin"></span>ИИ читает…';
+  try {
+    const parts = [];
+    for (const f of imgs.slice(0,3)) { const b64=await fileToB64(f); parts.push({type:'image',source:{type:'base64',media_type:f.type,data:b64}}); }
+    parts.push({type:'text',text:`Извлеки ${label}. Ответь ТОЛЬКО числом без пробелов и знаков.`});
+    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:100,messages:[{role:'user',content:parts}]})});
+    const data = await res.json();
+    const num = parseInt((data.content?.map(b=>b.text||'').join('')||'0').replace(/\D/g,''),10)||0;
+    if (num>0 && vid) {
+      document.getElementById(vid).value=num;
+      if(vid==='v-club-cash') updateSplitTotal('club');
+      st.className='ai-status ok'; st.textContent=`✅ ${fmt(num)} — проверь`;
+    } else { st.className='ai-status err'; st.textContent='⚠️ Не распознал — введи вручную'; }
+  } catch { st.className='ai-status err'; st.textContent='❌ Ошибка — введи вручную'; }
+}
+
+// ── calculate
+const fmt = n => n.toLocaleString('ru-RU') + ' ₽';
+const v = id => parseFloat(document.getElementById(id)?.value)||0;
+let lastCalc = null;
+
+function calculate() {
+  const restCash=v('v-rest-cash'), restCard=v('v-rest-card');
+  const clubCash=v('v-club-cash'), clubCard=v('v-club-card');
+  const yandex=v('v-yandex');
+  const expK=v('v-exp-kitchen'), expB=v('v-exp-bar'), expH=v('v-exp-hall'), expT=v('v-exp-tara');
+  const totalCashExp=expK+expB+expH+expT;
+  const bankExp=v('v-bank-exp'), salary=v('v-salary'), inkass=v('v-inkass');
+  const woText = document.getElementById('v-writeoff-text')?.value || '';
+  const totalWriteoff = window._writeoffTotal || 0;
+  const woK=0, woB=0, woH=0, woT=0;
+  // suppliers
+  const sup1=v('sup-1'), sup2=v('sup-2'), sup3=v('sup-3'), sup4=v('sup-4');
+  const sup1name=document.getElementById('sup-name-1')?.value||'Поставщик 1';
+  const sup2name=document.getElementById('sup-name-2')?.value||'Поставщик 2';
+  const sup3name=document.getElementById('sup-name-3')?.value||'Поставщик 3';
+  const sup4name=document.getElementById('sup-name-4')?.value||'Поставщик 4';
+  const totalRev=restCash+restCard+clubCash+clubCard+yandex;
+  const totalExp=totalCashExp+bankExp+salary;
+  const totalCashIn=restCash+clubCash;
+  const cashBalance=totalCashIn-totalCashExp-salary-inkass;
+
+  const set=(id,val,sign='')=>{const el=document.getElementById(id);if(el)el.textContent=sign+fmt(val);};
+  set('r-rest-cash',restCash); set('r-rest-card',restCard);
+  set('r-club-cash',clubCash); set('r-club-card',clubCard);
+  set('r-yandex',yandex); set('r-total-revenue',totalRev);
+  set('r-exp-kitchen',expK,'−'); set('r-exp-bar',expB,'−');
+  set('r-exp-hall',expH,'−'); set('r-exp-tara',expT,'−');
+  set('r-bank-exp',bankExp,'−'); set('r-salary',salary,'−');
+  set('r-total-expenses',totalExp,'−');
+  set('r-writeoff',totalWriteoff); set('r-inkass',inkass,'−');
+  set('ch-rest-cash',restCash); set('ch-club-cash',clubCash);
+  set('ch-total-in',totalCashIn);
+  set('ch-exp-kitchen',expK,'−'); set('ch-exp-bar',expB,'−');
+  set('ch-exp-hall',expH,'−'); set('ch-exp-tara',expT,'−');
+  set('ch-salary',salary,'−'); set('ch-inkass',inkass,'−');
+  const cb=document.getElementById('ch-balance');
+  cb.textContent=fmt(Math.abs(cashBalance));
+  cb.className='cash-hl-total-val '+(cashBalance>=0?'pos':'neg');
+  document.getElementById('summary').classList.add('show');
+  document.getElementById('cashHighlight').classList.add('show');
+  document.getElementById('excelBtn').classList.add('show');
+  document.getElementById('saveShiftBtn').style.display = 'block';
+  lastCalc={restCash,restCard,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
+}
+
+function exportExcel() {
+  if(!lastCalc){calculate();}
+  const d=lastCalc;
+  const dateStr=d.date?new Date(d.date+'T12:00:00').toLocaleDateString('ru-RU'):'—';
+  const ws1=XLSX.utils.aoa_to_sheet([
+    ['ОТЧЁТ КАССОВОЙ СМЕНЫ — ПЛАНЕТА'],['Дата:',dateStr],[],
+    ['ВЫРУЧКА','',''],
+    ['','Ресторан — наличка',d.restCash],['','Ресторан — карта',d.restCard],
+    ['','Детский клуб — наличка',d.clubCash],['','Детский клуб — карта',d.clubCard],
+    ['','Яндекс Еда',d.yandex],['ИТОГО ВЫРУЧКА','',d.totalRev],[],
+    ['РАСХОДЫ НАЛИЧКОЙ','',''],
+    ['','Кухня',d.expK],['','Бар',d.expB],['','Зал',d.expH],['','Тара',d.expT],
+    ['','ИТОГО',d.totalCashExp],[],
+    ['РАСХОДЫ БЕЗНАЛ','',''],
+    ['','Поставщики (р/с)',d.bankExp],['','Зарплата',d.salary],
+    ['ИТОГО РАСХОДЫ','',d.totalExp],[],
+    ['Инкассация (Руслан)','',d.inkass],[],
+    ['НАЛИЧКА В КАССЕ','',''],
+    ['','Пришло наличкой',d.totalCashIn],
+    ['','− Расходы наличкой',d.totalCashExp],
+    ['','− Зарплата',d.salary],['','− Инкассация',d.inkass],
+    ['НАЛИЧКА В КАССЕ (итог)','',d.cashBalance],[],
+    ['Списания (стоимость)','',(d.totalWriteoff||0)],[],  
+    ['Примечания:',d.notes||'—'],['Сформировано:',new Date().toLocaleString('ru-RU')],
+  ]);
+  ws1['!cols']=[{wch:28},{wch:28},{wch:18}];
+  // Sheet 2: suppliers detail
+  const ws2=XLSX.utils.aoa_to_sheet([
+    ['РАСХОДЫ ПО РАСЧЁТНОМУ СЧЁТУ'],
+    ['Дата:', dateStr],[],
+    ['Поставщик','Сумма (₽)'],
+    [d.sup1name, d.sup1],
+    [d.sup2name, d.sup2],
+    [d.sup3name, d.sup3],
+    [d.sup4name, d.sup4],
+    [],
+    ['ИТОГО', d.bankExp],
+  ]);
+  ws2['!cols']=[{wch:30},{wch:18}];
+
+  // Sheet 3: writeoff with calculated amounts
+  const woLines = (d.woText||'').split('\n').filter(l=>l.trim());
+  const prices = (() => { try { return JSON.parse(localStorage.getItem('planeta_prices')||'[]'); } catch{return[];} })();
+  const priceLookup = {};
+  prices.forEach(p => { if(p.name) priceLookup[p.name.toLowerCase()] = p.price; });
+  const ws3data = [
+    ['СПИСАНИЯ — ' + dateStr],[],
+    ['Дата', 'Продукт / описание', 'Граммы', 'Цена ₽/кг', 'Стоимость ₽'],
+  ];
+  let wo3total = 0;
+  woLines.forEach(line => {
+    const gm = line.match(/(\d+[\d.,]*)\s*(грамм|г\.|г\b)/i);
+    const grams = gm ? parseFloat(gm[1].replace(',','.')) : null;
+    let foundPrice = 0, foundName = null;
+    const keys = Object.keys(priceLookup).sort((a,b)=>b.length-a.length);
+    for(const k of keys){ if(line.toLowerCase().includes(k)){foundPrice=priceLookup[k];foundName=k;break;} }
+    const sum = (foundPrice && grams) ? Math.round((grams/1000)*foundPrice) : '';
+    if(typeof sum==='number') wo3total += sum;
+    ws3data.push([dateStr, line.trim(), grams||'', foundPrice||'', sum||'нет цены']);
+  });
+  ws3data.push([],[' ','ИТОГО стоимость списаний','','',wo3total]);
+  if (woLines.length === 0) ws3data.push([dateStr, '— нет списаний —','','','']);
+  const ws3=XLSX.utils.aoa_to_sheet(ws3data);
+  ws3['!cols']=[{wch:14},{wch:40},{wch:12},{wch:14},{wch:16}];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws1,'Итог смены');
+  XLSX.utils.book_append_sheet(wb,ws2,'Поставщики');
+  XLSX.utils.book_append_sheet(wb,ws3,'Списания');
+  XLSX.writeFile(wb,`Касса_Планета_${d.date||'смена'}.xlsx`);
+}
+
+// ── AI strip
+const aiInput=document.getElementById('aiInput'),aiSend=document.getElementById('aiSend'),aiReply=document.getElementById('aiReply');
+let aiHistory=[],aibusy=false;
+async function askAI(){
+  const text=aiInput.value.trim(); if(!text||aibusy)return;
+  aiInput.value=''; aiInput.style.height='auto'; aibusy=true; aiSend.disabled=true;
+  const ctx=lastCalc?`Данные: ресторан нал ${lastCalc.restCash}₽ карта ${lastCalc.restCard}₽, клуб нал ${lastCalc.clubCash}₽ карта ${lastCalc.clubCard}₽, Яндекс Еда ${lastCalc.yandex}₽, расходы нал (кухня ${lastCalc.expK}₽ бар ${lastCalc.expB}₽ зал ${lastCalc.expH}₽ тара ${lastCalc.expT}₽), зарплата ${lastCalc.salary}₽, инкассация ${lastCalc.inkass}₽, наличка в кассе ${lastCalc.cashBalance}₽.`:'';
+  const sys=`Ты помощник финансиста заведения «Планета». ${ctx} Отвечай коротко, по-русски.`;
+  aiReply.className='ai-reply show'; aiReply.innerHTML='<span class="spin"></span>';
+  aiHistory.push({role:'user',content:text});
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:sys,messages:aiHistory})});
+    const data=await res.json();
+    const reply=data.content?.map(b=>b.text||'').join('')||'Ошибка.';
+    aiHistory.push({role:'assistant',content:reply});
+    aiReply.className='ai-reply show'; aiReply.textContent=reply;
+  } catch { aiReply.className='ai-reply show'; aiReply.textContent='❌ Ошибка соединения.'; }
+  aibusy=false; aiSend.disabled=false;
+}
+aiInput.addEventListener('input',()=>{aiInput.style.height='auto';aiInput.style.height=aiInput.scrollHeight+'px';});
+aiInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askAI();}});
+</script>
+</body>
+</html>
