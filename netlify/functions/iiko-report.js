@@ -157,7 +157,7 @@ exports.handler = async (event) => {
       },
       {
         name: 'table_orders',
-        path: '/api/1/orders/by_table_order_date_and_status',
+        path: '/api/1/order/by_table',
         body: {
           organizationIds: [orgId],
           dateFrom: r.isoFrom,
@@ -167,7 +167,7 @@ exports.handler = async (event) => {
       },
       {
         name: 'cashshifts',
-        path: '/api/1/cashshifts/list',
+        path: '/resto/api/v2/cashshifts/list',
         body: {
           organizationId: orgId,
           openDateFrom: r.isoFrom,
