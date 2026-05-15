@@ -540,6 +540,9 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
         <div class="card-sub">Загрузи файл или введи вручную</div>
       </div>
     </div>
+    <button type="button" class="upload-btn" onclick="loadClubFromKassa()">
+  🔄 Загрузить из кассы детского клуба
+</button>
     <div class="upload-zone">
       <input type="file" id="f-club" accept="image/*,application/pdf,.xlsx,.xls,.csv" multiple>
       <div class="uz-icon">📁</div>
@@ -1533,7 +1536,55 @@ async function extractAI(files, sid, vid, label) {
 const fmt = n => n.toLocaleString('ru-RU') + ' ₽';
 const v = id => parseFloat(document.getElementById(id)?.value)||0;
 let lastCalc = null;
+async function loadClubFromKassa() {
+  const st = document.getElementById('s-club');
 
+  try {
+    if (st) {
+      st.className = 'ai-status loading';
+      st.innerHTML = '<span class="spin"></span>Загружаю данные из кассы детского клуба…';
+    }
+
+    const res = await fetch('https://planeta-kassa.onrender.com/api/state');
+
+    if (!res.ok) {
+      throw new Error('Касса детского клуба не ответила');
+    }
+
+    const data = await res.json();
+    const sales = data.sales || [];
+
+    let cash = 0;
+    let card = 0;
+
+    sales.forEach(s => {
+      const price = Number(s.price) || 0;
+
+      if (s.cashier === 'card') {
+        card += price;
+      } else {
+        cash += price;
+      }
+    });
+
+    document.getElementById('v-club-cash').value = Math.round(cash);
+    document.getElementById('v-club-card').value = Math.round(card);
+
+    updateSplitTotal('club');
+
+    if (st) {
+      st.className = 'ai-status ok';
+      st.textContent =
+        `✅ Загружено: наличка ${fmt(Math.round(cash))}, карта ${fmt(Math.round(card))}`;
+    }
+
+  } catch (e) {
+    if (st) {
+      st.className = 'ai-status err';
+      st.textContent = '❌ Ошибка загрузки: ' + e.message;
+    }
+  }
+}
 function calculate() {
   const restCash=v('v-rest-cash'), restCard=v('v-rest-card');
   const clubCash=v('v-club-cash'), clubCard=v('v-club-card');
