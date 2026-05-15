@@ -70,7 +70,7 @@ async function ensureActiveShift() {
   return created[0];
 }
 
-// Главные данные кассы
+// Главные данные активной кассы
 app.get('/api/state', async (req, res) => {
   try {
     const shift = await ensureActiveShift();
@@ -96,6 +96,90 @@ app.get('/api/state', async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Отчёт детского клуба по дате — берёт закрытую смену или активную
+app.get('/api/club-report', async (req, res) => {
+  try {
+    const date = req.query.date || new Date().toISOString().slice(0, 10);
+
+    const dayStart = new Date(date + 'T00:00:00+03:00').getTime();
+    const dayEnd = new Date(date + 'T23:59:59+03:00').getTime();
+
+    // Ищем смены, которые начались в выбранный день
+    let shifts = await supa(
+      `club_shifts?started_at=gte.${dayStart}&started_at=lte.${dayEnd}&order=id.desc`
+    );
+
+    // Если смена началась раньше, но закрылась в выбранный день
+    if (!shifts || shifts.length === 0) {
+      shifts = await supa(
+        `club_shifts?ended_at=gte.${dayStart}&ended_at=lte.${dayEnd}&order=id.desc`
+      );
+    }
+
+    if (!shifts || shifts.length === 0) {
+      return res.json({
+        ok: false,
+        date,
+        error: 'Смена детского клуба за эту дату не найдена',
+        cash: 0,
+        card: 0,
+        total: 0,
+        cnt: 0,
+        shifts: [],
+        sales: []
+      });
+    }
+
+    // Если за день несколько смен — суммируем все
+    let allSales = [];
+
+    for (const shift of shifts) {
+      const sales = await supa(
+        `club_sales?shift_id=eq.${shift.id}&order=sold_at.asc`
+      );
+
+      allSales = allSales.concat(
+        sales.map(s => ({
+          ...s,
+          shift_id: shift.id,
+          shift_started_at: shift.started_at,
+          shift_ended_at: shift.ended_at,
+          shift_is_active: shift.is_active
+        }))
+      );
+    }
+
+    let cash = 0;
+    let card = 0;
+
+    allSales.forEach(s => {
+      const price = Number(s.price) || 0;
+
+      if (s.cashier === 'card') {
+        card += price;
+      } else {
+        cash += price;
+      }
+    });
+
+    res.json({
+      ok: true,
+      date,
+      shifts,
+      cash: Math.round(cash),
+      card: Math.round(card),
+      total: Math.round(cash + card),
+      cnt: allSales.length,
+      sales: allSales
+    });
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e.message
+    });
   }
 });
 
@@ -404,42 +488,43 @@ function startBot() {
   }
 
   const FIELD_NAMES = {
-  expK: '🛒 Продукты',
-  expH: '📦 Прочее',
-  salary: '👥 Зарплата',
-  inkass: '💼 Инкассация',
-  bankExp: '🏦 Расч. счёт',
-  restCash: '🍽️ Ресторан наличка',
-  restCard: '🍽️ Ресторан карта',
-  clubCash: '🎠 Клуб наличка',
-  clubCard: '🎠 Клуб карта',
-  yandex: '🟡 Яндекс Еда'
-};
+    expK: '🛒 Продукты',
+    expH: '📦 Прочее',
+    salary: '👥 Зарплата',
+    inkass: '💼 Инкассация',
+    bankExp: '🏦 Расч. счёт',
+    restCash: '🍽️ Ресторан наличка',
+    restCard: '🍽️ Ресторан карта',
+    clubCash: '🎠 Клуб наличка',
+    clubCard: '🎠 Клуб карта',
+    yandex: '🟡 Яндекс Еда'
+  };
 
   const PATTERNS = [
-  [/ресторан\s*(нал|нальн)/i, 'restCash'],
-  [/ресторан\s*(карт|безнал)/i, 'restCard'],
-  [/клуб\s*(нал|нальн)/i, 'clubCash'],
-  [/клуб\s*(карт|безнал)/i, 'clubCard'],
-  [/(яндекс|yandex)/i, 'yandex'],
-  [/(зарплат|зп|з\/п)/i, 'salary'],
-  [/(инкасс|руслан)/i, 'inkass'],
-  [/(расч[её]тн|р\/с|р\.\s*с|безнал|счет)/i, 'bankExp'],
-  [/(продукт|продукты)/i, 'expK'],
-  [/(прочее|проч)/i, 'expH']
-];
+    [/ресторан\s*(нал|нальн)/i, 'restCash'],
+    [/ресторан\s*(карт|безнал)/i, 'restCard'],
+    [/клуб\s*(нал|нальн)/i, 'clubCash'],
+    [/клуб\s*(карт|безнал)/i, 'clubCard'],
+    [/(яндекс|yandex)/i, 'yandex'],
+    [/(зарплат|зп|з\/п)/i, 'salary'],
+    [/(инкасс|руслан)/i, 'inkass'],
+    [/(расч[её]тн|р\/с|р\.\s*с|безнал|счет)/i, 'bankExp'],
+    [/(продукт|продукты)/i, 'expK'],
+    [/(прочее|проч)/i, 'expH']
+  ];
 
   function parseNumber(s) {
-  const cleaned = String(s).replace(/[^\d]/g, '');
-  return cleaned ? parseInt(cleaned, 10) : 0;
-}
-  function sumNumbersFromLine(line) {
-  const matches = String(line).match(/\d+/g) || [];
+    const cleaned = String(s).replace(/[^\d]/g, '');
+    return cleaned ? parseInt(cleaned, 10) : 0;
+  }
 
-  return matches.reduce((sum, part) => {
-    return sum + Number(part);
-  }, 0);
-}
+  function sumNumbersFromLine(line) {
+    const matches = String(line).match(/\d+/g) || [];
+
+    return matches.reduce((sum, part) => {
+      return sum + Number(part);
+    }, 0);
+  }
 
   function parseMessage(text) {
     const result = {};
@@ -448,27 +533,29 @@ function startBot() {
     for (const line of text.split('\n')) {
       const clean = line.trim();
       if (!clean) continue;
-// Продукты: можно писать "Продукты 569 237 842"
-if (/продукт/i.test(clean)) {
-  const total = sumNumbersFromLine(clean);
 
-  if (total > 0) {
-    result.expK = total;
-  }
+      // Продукты: можно писать "Продукты 569 237 842"
+      if (/продукт/i.test(clean)) {
+        const total = sumNumbersFromLine(clean);
 
-  continue;
-}
+        if (total > 0) {
+          result.expK = total;
+        }
 
-// Прочее: можно писать "Прочее 399 234 488"
-if (/проч/i.test(clean)) {
-  const total = sumNumbersFromLine(clean);
+        continue;
+      }
 
-  if (total > 0) {
-    result.expH = total;
-  }
+      // Прочее: можно писать "Прочее 399 234 488"
+      if (/проч/i.test(clean)) {
+        const total = sumNumbersFromLine(clean);
 
-  continue;
-}
+        if (total > 0) {
+          result.expH = total;
+        }
+
+        continue;
+      }
+
       if (/\d+\s*(грамм|г\.|\bг\b|кг)/i.test(clean)) {
         writeoffLines.push(clean);
         continue;
@@ -552,7 +639,12 @@ if (/проч/i.test(clean)) {
           `Я бот *Планета Касса*.\n` +
           `Пиши мне что было за смену — я запишу.\n\n` +
           `*Пример:*\n` +
-`\`\`\`\nПродукты 569 237 842\nПрочее 399 234 488\nЗарплата 8000\nИнкассация 50000\n\`\`\`\n\n` +
+          `\`\`\`\n` +
+          `Продукты 569 237 842\n` +
+          `Прочее 399 234 488\n` +
+          `Зарплата 8000\n` +
+          `Инкассация 50000\n` +
+          `\`\`\`\n\n` +
           `*Команды:*\n` +
           `/смена — показать текущую смену\n` +
           `/итог — баланс налички\n` +
@@ -570,33 +662,33 @@ if (/проч/i.test(clean)) {
       }
 
       if (cmd === '/help') {
-  return sendMessage(
-    chatId,
-    `📖 *Как пользоваться*\n\n` +
-    `Пиши построчно: *ключевое слово + сумма*\n\n` +
-    `Я понимаю:\n` +
-    `• Продукты — можно писать несколько сумм в одной строке\n` +
-    `  Например: \`Продукты 569 237 842\`\n` +
-    `• Прочее — тоже можно писать несколько сумм\n` +
-    `  Например: \`Прочее 399 234 488\`\n` +
-    `• Зарплата\n` +
-    `• Инкассация / Руслан\n` +
-    `• Расчётный счёт / Безнал\n` +
-    `• Ресторан наличка / ресторан карта\n` +
-    `• Клуб наличка / клуб карта\n` +
-    `• Яндекс Еда\n\n` +
-    `Если упоминаешь *граммы* — это списания.\n\n` +
-    `Дата по умолчанию — сегодня.\n` +
-    `Можно указать дату: \`за 13.05.2026\`\n\n` +
-    `*Пример сообщения:*\n` +
-    `\`\`\`\n` +
-    `Продукты 569 237 842\n` +
-    `Прочее 399 234 488\n` +
-    `Зарплата 8000\n` +
-    `Инкассация 50000\n` +
-    `\`\`\``
-  );
-}
+        return sendMessage(
+          chatId,
+          `📖 *Как пользоваться*\n\n` +
+          `Пиши построчно: *ключевое слово + сумма*\n\n` +
+          `Я понимаю:\n` +
+          `• Продукты — можно писать несколько сумм в одной строке\n` +
+          `  Например: \`Продукты 569 237 842\`\n` +
+          `• Прочее — тоже можно писать несколько сумм\n` +
+          `  Например: \`Прочее 399 234 488\`\n` +
+          `• Зарплата\n` +
+          `• Инкассация / Руслан\n` +
+          `• Расчётный счёт / Безнал\n` +
+          `• Ресторан наличка / ресторан карта\n` +
+          `• Клуб наличка / клуб карта\n` +
+          `• Яндекс Еда\n\n` +
+          `Если упоминаешь *граммы* — это списания.\n\n` +
+          `Дата по умолчанию — сегодня.\n` +
+          `Можно указать дату: \`за 13.05.2026\`\n\n` +
+          `*Пример сообщения:*\n` +
+          `\`\`\`\n` +
+          `Продукты 569 237 842\n` +
+          `Прочее 399 234 488\n` +
+          `Зарплата 8000\n` +
+          `Инкассация 50000\n` +
+          `\`\`\``
+        );
+      }
 
       if (cmd === '/смена' || cmd === '/smena') {
         try {
@@ -670,12 +762,12 @@ if (/проч/i.test(clean)) {
 
     if (Object.keys(parsed).length === 0) {
       return sendMessage(
-  chatId,
-  `🤔 Не понял что записать.\n\n` +
-  `Пиши в формате: \`Продукты 569 237 842\`\n` +
-  `или: \`Прочее 399 234 488\`\n` +
-  `Подсказка: /help`
-);
+        chatId,
+        `🤔 Не понял что записать.\n\n` +
+        `Пиши в формате: \`Продукты 569 237 842\`\n` +
+        `или: \`Прочее 399 234 488\`\n` +
+        `Подсказка: /help`
+      );
     }
 
     const shiftDate = detectDate(text);
