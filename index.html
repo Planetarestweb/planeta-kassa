@@ -659,7 +659,7 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
       <div class="card-icon red">💵</div>
       <div>
         <div class="card-title">Расходы — Наличка</div>
-        <div class="card-sub">По отделам: кухня, бар, зал, тара</div>
+        <div class="card-sub">Продукты и прочие расходы наличкой</div>
       </div>
     </div>
 
@@ -672,30 +672,26 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
         </div>
       </div>
 
-      <div class="dept-field">
-        <div class="dept-label">🍹 Бар</div>
-        <div class="dept-input-wrap">
-          <span class="cur-sm">₽</span>
-          <input class="dept-input" type="number" id="v-exp-bar" placeholder="0" oninput="updateCashExpTotal()">
-        </div>
-      </div>
-
-      <div class="dept-field">
-        <div class="dept-label">🪑 Зал</div>
-        <div class="dept-input-wrap">
-          <span class="cur-sm">₽</span>
-          <input class="dept-input" type="number" id="v-exp-hall" placeholder="0" oninput="updateCashExpTotal()">
-        </div>
-      </div>
-
-      <div class="dept-field">
-        <div class="dept-label">📦 Тара</div>
-        <div class="dept-input-wrap">
-          <span class="cur-sm">₽</span>
-          <input class="dept-input" type="number" id="v-exp-tara" placeholder="0" oninput="updateCashExpTotal()">
-        </div>
-      </div>
+      <div class="dept-grid">
+  <div class="dept-field">
+    <div class="dept-label">🛒 Продукты</div>
+    <div class="dept-input-wrap">
+      <span class="cur-sm">₽</span>
+      <input class="dept-input" type="number" id="v-exp-kitchen" placeholder="0" oninput="updateCashExpTotal()">
     </div>
+  </div>
+
+  <div class="dept-field">
+    <div class="dept-label">📦 Прочее</div>
+    <div class="dept-input-wrap">
+      <span class="cur-sm">₽</span>
+      <input class="dept-input" type="number" id="v-exp-hall" placeholder="0" oninput="updateCashExpTotal()">
+    </div>
+  </div>
+
+  <input type="hidden" id="v-exp-bar" value="0">
+  <input type="hidden" id="v-exp-tara" value="0">
+</div>
 
     <div class="split-total-row" style="margin-top:10px">
       <span>Итого расходы наличкой</span>
@@ -828,10 +824,10 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
 
     <div class="sum-group">
       <div class="sum-group-label">Расходы (денежные)</div>
-      <div class="sum-row"><span class="sum-label">🍳 Кухня — наличка</span><span class="sum-val neg" id="r-exp-kitchen">—</span></div>
-      <div class="sum-row"><span class="sum-label">🍹 Бар — наличка</span><span class="sum-val neg" id="r-exp-bar">—</span></div>
-      <div class="sum-row"><span class="sum-label">🪑 Зал — наличка</span><span class="sum-val neg" id="r-exp-hall">—</span></div>
-      <div class="sum-row"><span class="sum-label">📦 Тара — наличка</span><span class="sum-val neg" id="r-exp-tara">—</span></div>
+      <div class="sum-row"><span class="sum-label">🛒 Продукты — наличка</span><span class="sum-val neg" id="r-exp-kitchen">—</span></div>
+      <div class="sum-row" style="display:none"><span class="sum-label">Бар — наличка</span><span class="sum-val neg" id="r-exp-bar">—</span></div>
+      <div class="sum-row"><span class="sum-label">📦 Прочее — наличка</span><span class="sum-val neg" id="r-exp-hall">—</span></div>
+      <div class="sum-row" style="display:none"><span class="sum-label">Тара — наличка</span><span class="sum-val neg" id="r-exp-tara">—</span></div>
       <div class="sum-row"><span class="sum-label">🏦 Расчётный счёт</span><span class="sum-val neg" id="r-bank-exp">—</span></div>
       <div class="sum-row"><span class="sum-label">👥 Зарплата</span><span class="sum-val neg" id="r-salary">—</span></div>
       <div class="sum-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
@@ -858,10 +854,10 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
       <span class="hl-label" style="color:var(--text);font-weight:600">Итого пришло наличкой</span>
       <span class="hl-val pos" id="ch-total-in">—</span>
     </div>
-    <div class="cash-hl-row"><span class="hl-label">🍳 − Кухня</span><span class="hl-val neg" id="ch-exp-kitchen">—</span></div>
-    <div class="cash-hl-row"><span class="hl-label">🍹 − Бар</span><span class="hl-val neg" id="ch-exp-bar">—</span></div>
-    <div class="cash-hl-row"><span class="hl-label">🪑 − Зал</span><span class="hl-val neg" id="ch-exp-hall">—</span></div>
-    <div class="cash-hl-row"><span class="hl-label">📦 − Тара</span><span class="hl-val neg" id="ch-exp-tara">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">🛒 − Продукты</span><span class="hl-val neg" id="ch-exp-kitchen">—</span></div>
+<div class="cash-hl-row" style="display:none"><span class="hl-label">− Бар</span><span class="hl-val neg" id="ch-exp-bar">—</span></div>
+<div class="cash-hl-row"><span class="hl-label">📦 − Прочее</span><span class="hl-val neg" id="ch-exp-hall">—</span></div>
+<div class="cash-hl-row" style="display:none"><span class="hl-label">− Тара</span><span class="hl-val neg" id="ch-exp-tara">—</span></div>
     <div class="cash-hl-row"><span class="hl-label">👥 − Зарплата</span><span class="hl-val neg" id="ch-salary">—</span></div>
     <div class="cash-hl-row"><span class="hl-label">💼 − Инкассация (Руслан)</span><span class="hl-val neu" id="ch-inkass">—</span></div>
     <div class="cash-hl-total">
