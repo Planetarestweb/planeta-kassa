@@ -1,6 +1,8 @@
 // netlify/functions/iiko-report.js
 
 const IIKO_RESTO_BASE = process.env.IIKO_RESTO_BASE || 'https://planeta05.iiko.it';
+const IIKO_RESTO_LOGIN = process.env.IIKO_RESTO_LOGIN || '';
+const IIKO_RESTO_PASSWORD = process.env.IIKO_RESTO_PASSWORD || '';
 
 function json(statusCode, body) {
   return {
@@ -37,6 +39,42 @@ async function getText(url) {
     data,
     rawText: text
   };
+}
+
+async function getRestoKey() {
+  if (!IIKO_RESTO_LOGIN || !IIKO_RESTO_PASSWORD) {
+    throw new Error('Нет IIKO_RESTO_LOGIN или IIKO_RESTO_PASSWORD в Netlify');
+  }
+
+  const base = IIKO_RESTO_BASE.replace(/\/$/, '');
+
+  const url =
+    `${base}/resto/api/auth` +
+    `?login=${encodeURIComponent(IIKO_RESTO_LOGIN)}` +
+    `&pass=${encodeURIComponent(IIKO_RESTO_PASSWORD)}`;
+
+  const result = await getText(url);
+
+  if (!result.ok) {
+    throw new Error(
+      `Ошибка авторизации iiko resto: HTTP ${result.status}. ` +
+      String(result.rawText || '').slice(0, 500)
+    );
+  }
+
+  const key =
+    typeof result.data === 'string'
+      ? result.data
+      : String(result.rawText || '').trim();
+
+  if (!key || key.toLowerCase().includes('error')) {
+    throw new Error(
+      'iiko не вернул key авторизации: ' +
+      String(result.rawText || '').slice(0, 500)
+    );
+  }
+
+  return key.replace(/^"|"$/g, '').trim();
 }
 
 function extractPaymentTotals(obj) {
@@ -117,10 +155,12 @@ exports.handler = async (event) => {
       new Date().toISOString().slice(0, 10);
 
     const base = IIKO_RESTO_BASE.replace(/\/$/, '');
+    const key = await getRestoKey();
 
     const url =
       `${base}/resto/api/v2/cashshifts/list` +
-      `?openDateFrom=${encodeURIComponent(date)}` +
+      `?key=${encodeURIComponent(key)}` +
+      `&openDateFrom=${encodeURIComponent(date)}` +
       `&openDateTo=${encodeURIComponent(date)}` +
       `&status=ANY`;
 
@@ -130,14 +170,14 @@ exports.handler = async (event) => {
     return json(200, {
       ok: result.ok,
       date,
-      url,
+      url: url.replace(encodeURIComponent(key), '***KEY_HIDDEN***'),
       status: result.status,
       statusText: result.statusText,
       cash: totals.cash,
       card: totals.card,
       message: result.ok
-        ? 'Метод cashshifts/list ответил. Если cash/card = 0, нужно посмотреть структуру ответа.'
-        : 'Метод cashshifts/list вернул ошибку. Нужна авторизация или другой адрес сервера.',
+        ? 'Авторизация прошла, cashshifts/list ответил.'
+        : 'Авторизация прошла, но cashshifts/list вернул ошибку.',
       responsePreview:
         typeof result.rawText === 'string'
           ? result.rawText.slice(0, 2000)
