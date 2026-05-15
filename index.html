@@ -1338,22 +1338,22 @@ function formatDate(dateKey) {
 }
 
 async function saveShift() {
-  if (!lastCalc) { calculate(); }
-  const d = lastCalc;
-  const dateKey = d.date || new Date().toISOString().slice(0,10);
+  if (!lastCalc) {
+    calculate();
+  }
 
-  const snapshot = {
-    shift_date: dateKey,
-    data: {
-      ...d,
-      suppliers: [1,2,3,4].map(i => ({
-        name: document.getElementById(`sup-name-${i}`)?.value || `Поставщик ${i}`,
-        amount: parseFloat(document.getElementById(`sup-${i}`)?.value)||0
-      })),
-      writeoffText: document.getElementById('v-writeoff-text')?.value || '',
-      notes: document.getElementById('notes')?.value || '',
-      savedAt: new Date().toISOString(),
-    }
+  const d = lastCalc;
+  const dateKey = d.date || new Date().toISOString().slice(0, 10);
+
+  const snapshotData = {
+    ...d,
+    suppliers: [1, 2, 3, 4].map(i => ({
+      name: document.getElementById(`sup-name-${i}`)?.value || `Поставщик ${i}`,
+      amount: parseFloat(document.getElementById(`sup-${i}`)?.value) || 0
+    })),
+    writeoffText: document.getElementById('v-writeoff-text')?.value || '',
+    notes: document.getElementById('notes')?.value || '',
+    savedAt: new Date().toISOString()
   };
 
   const btn = document.getElementById('saveShiftBtn');
@@ -1361,19 +1361,49 @@ async function saveShift() {
   btn.disabled = true;
 
   try {
-    await supaFetch('/rest/v1/shifts', 'POST', snapshot);
+    // Проверяем, есть ли уже смена за эту дату
+    const existingRows = await supaFetch(
+      `/rest/v1/shifts?shift_date=eq.${encodeURIComponent(dateKey)}&select=*`
+    );
+
+    if (existingRows && existingRows.length > 0) {
+      // Если смена уже есть — обновляем существующую запись
+      const oldData = existingRows[0].data || {};
+
+      await supaFetch(
+        `/rest/v1/shifts?shift_date=eq.${encodeURIComponent(dateKey)}`,
+        'PATCH',
+        {
+          data: {
+            ...oldData,
+            ...snapshotData
+          }
+        }
+      );
+    } else {
+      // Если смены ещё нет — создаём новую
+      await supaFetch('/rest/v1/shifts', 'POST', {
+        shift_date: dateKey,
+        data: snapshotData
+      });
+    }
+
     btn.textContent = '✅ Сохранено!';
     btn.style.borderColor = 'var(--green)';
     btn.style.color = 'var(--green)';
+
     renderHistoryList();
+
     setTimeout(() => {
       btn.textContent = '💾 Сохранить смену в историю';
       btn.disabled = false;
     }, 2000);
-  } catch(err) {
+
+  } catch (err) {
     btn.textContent = '❌ Ошибка — попробуй снова';
     btn.disabled = false;
-    console.error(err);
+    alert('Ошибка сохранения: ' + err.message);
+    console.error('SAVE SHIFT ERROR:', err);
   }
 }
 
