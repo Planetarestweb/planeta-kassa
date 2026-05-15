@@ -1531,37 +1531,34 @@ async function loadClubFromKassa() {
       st.innerHTML = '<span class="spin"></span>Загружаю данные из кассы детского клуба…';
     }
 
-    const res = await fetch('https://planeta-kassa.onrender.com/api/state');
+    const date = document.getElementById('shiftDate')?.value || new Date().toISOString().slice(0, 10);
+
+    const res = await fetch(
+      'https://planeta-kassa.onrender.com/api/club-report?date=' + encodeURIComponent(date)
+    );
 
     if (!res.ok) {
       throw new Error('Касса детского клуба не ответила');
     }
 
     const data = await res.json();
-    const sales = data.sales || [];
 
-    let cash = 0;
-    let card = 0;
+    if (!data.ok) {
+      throw new Error(data.error || 'Смена детского клуба за эту дату не найдена');
+    }
 
-    sales.forEach(s => {
-      const price = Number(s.price) || 0;
+    const cash = Math.round(Number(data.cash) || 0);
+    const card = Math.round(Number(data.card) || 0);
 
-      if (s.cashier === 'card') {
-        card += price;
-      } else {
-        cash += price;
-      }
-    });
-
-    document.getElementById('v-club-cash').value = Math.round(cash);
-    document.getElementById('v-club-card').value = Math.round(card);
+    document.getElementById('v-club-cash').value = cash;
+    document.getElementById('v-club-card').value = card;
 
     updateSplitTotal('club');
 
     if (st) {
       st.className = 'ai-status ok';
       st.textContent =
-        `✅ Загружено: наличка ${fmt(Math.round(cash))}, карта ${fmt(Math.round(card))}`;
+        `✅ Загружено за ${date}: наличка ${fmt(cash)}, карта ${fmt(card)}, продаж ${data.cnt || 0}`;
     }
 
   } catch (e) {
