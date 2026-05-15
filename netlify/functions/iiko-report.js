@@ -1,7 +1,6 @@
 // netlify/functions/iiko-report.js
 
-const IIKO_BASE = 'https://api-ru.iiko.services';
-const IIKO_RESTO_BASE = 'https://planeta05.iikoweb.ru';
+const IIKO_RESTO_BASE = process.env.IIKO_RESTO_BASE || 'https://planeta05.iiko.it';
 
 function json(statusCode, body) {
   return {
@@ -14,76 +13,29 @@ function json(statusCode, body) {
   };
 }
 
-async function iikoRequest(path, body, token) {
-  const res = await fetch(IIKO_BASE + path, {
-    method: 'POST',
+async function getText(url) {
+  const res = await fetch(url, {
+    method: 'GET',
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {})
-    },
-    body: JSON.stringify(body || {})
+      Accept: 'application/json,text/plain,*/*'
+    }
   });
 
   const text = await res.text();
-  let data = {};
 
+  let data;
   try {
-    data = text ? JSON.parse(text) : {};
+    data = text ? JSON.parse(text) : null;
   } catch {
     data = { raw: text };
   }
 
-  if (!res.ok) {
-    throw new Error(data.errorDescription || data.message || data.raw || `HTTP ${res.status}`);
-  }
-
-  return data;
-}
-
-async function restoRequest(path, body, token) {
-  const res = await fetch(IIKO_RESTO_BASE + path, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {})
-    },
-    body: JSON.stringify(body || {})
-  });
-
-  const text = await res.text();
-  let data = {};
-
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = { raw: text };
-  }
-
-  if (!res.ok) {
-    throw new Error(data.errorDescription || data.message || data.raw || `HTTP ${res.status}`);
-  }
-
-  return data;
-}
-
-async function getToken(apiKey) {
-  const data = await iikoRequest('/api/1/access_token', {
-    apiLogin: apiKey
-  });
-
-  if (!data.token) {
-    throw new Error('iiko не вернул token');
-  }
-
-  return data.token;
-}
-
-function dateRange(date) {
   return {
-    isoFrom: `${date}T00:00:00`,
-    isoTo: `${date}T23:59:59`,
-    dateFrom: `${date} 00:00:00.000`,
-    dateTo: `${date} 23:59:59.999`
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    data,
+    rawText: text
   };
 }
 
@@ -121,8 +73,6 @@ function extractPaymentTotals(obj) {
         Number(x.total) ||
         Number(x.value) ||
         Number(x.revenue) ||
-        Number(x.cash) ||
-        Number(x.card) ||
         0;
 
       if (amount > 0) {
@@ -145,6 +95,9 @@ function extractPaymentTotals(obj) {
         }
       }
 
+      if (Number(x.cashSum) > 0) cash += Number(x.cashSum);
+      if (Number(x.cardSum) > 0) card += Number(x.cardSum);
+
       Object.values(x).forEach(walk);
     }
   }
@@ -159,131 +112,38 @@ function extractPaymentTotals(obj) {
 
 exports.handler = async (event) => {
   try {
-    const apiKey = process.env.IIKO_API_KEY;
-    const envOrgId = process.env.IIKO_ORGANIZATION_ID || '';
-
-    if (!apiKey) {
-      return json(500, {
-        ok: false,
-        error: 'Нет переменной IIKO_API_KEY в Netlify'
-      });
-    }
-
     const date =
       event.queryStringParameters?.date ||
       new Date().toISOString().slice(0, 10);
 
-    const token = await getToken(apiKey);
+    const base = IIKO_RESTO_BASE.replace(/\/$/, '');
 
-    const orgsData = await iikoRequest('/api/1/organizations', {
-      organizationIds: null,
-      returnAdditionalInfo: true,
-      includeDisabled: false
-    }, token);
+    const url =
+      `${base}/resto/api/v2/cashshifts/list` +
+      `?openDateFrom=${encodeURIComponent(date)}` +
+      `&openDateTo=${encodeURIComponent(date)}` +
+      `&status=ANY`;
 
-    const orgs = orgsData.organizations || [];
-    const orgId = envOrgId || orgs[0]?.id;
-
-    if (!orgId) {
-      return json(500, {
-        ok: false,
-        error: 'Не найден organizationId',
-        organizations: orgs
-      });
-    }
-
-    const r = dateRange(date);
-
-    const attempts = [
-      {
-        name: 'deliveries',
-        source: 'cloud',
-        path: '/api/1/deliveries/by_delivery_date_and_status',
-        body: {
-          organizationIds: [orgId],
-          deliveryDateFrom: r.isoFrom,
-          deliveryDateTo: r.isoTo,
-          statuses: ['Closed', 'Delivered']
-        }
-      },
-
-      {
-        name: 'table_orders',
-        source: 'cloud',
-        path: '/api/1/order/by_table',
-        body: {
-          organizationIds: [orgId],
-          tableIds: [],
-          dateFrom: r.isoFrom,
-          dateTo: r.isoTo,
-          statuses: ['Closed']
-        }
-      },
-
-      {
-        name: 'cashshifts_resto',
-        source: 'resto',
-        path: '/resto/api/v2/cashshifts/list',
-        body: {
-          organizationId: orgId,
-          openDateFrom: r.isoFrom,
-          openDateTo: r.isoTo
-        }
-      }
-    ];
-
-    const debug = [];
-
-    for (const attempt of attempts) {
-      try {
-        const data = attempt.source === 'resto'
-          ? await restoRequest(attempt.path, attempt.body, token)
-          : await iikoRequest(attempt.path, attempt.body, token);
-
-        const totals = extractPaymentTotals(data);
-
-        debug.push({
-          method: attempt.name,
-          source: attempt.source,
-          path: attempt.path,
-          body: attempt.body,
-          cash: totals.cash,
-          card: totals.card,
-          sample: data
-        });
-
-        if (totals.cash > 0 || totals.card > 0) {
-          return json(200, {
-            ok: true,
-            date,
-            organizationId: orgId,
-            method: attempt.name,
-            cash: totals.cash,
-            card: totals.card,
-            debug
-          });
-        }
-      } catch (e) {
-        debug.push({
-          method: attempt.name,
-          source: attempt.source,
-          path: attempt.path,
-          body: attempt.body,
-          error: e.message
-        });
-      }
-    }
+    const result = await getText(url);
+    const totals = extractPaymentTotals(result.data);
 
     return json(200, {
-      ok: false,
-      error: 'Подключение есть, но суммы налички/карты не найдены. Пришли debug из ответа функции.',
+      ok: result.ok,
       date,
-      organizationId: orgId,
-      cash: 0,
-      card: 0,
-      debug
+      url,
+      status: result.status,
+      statusText: result.statusText,
+      cash: totals.cash,
+      card: totals.card,
+      message: result.ok
+        ? 'Метод cashshifts/list ответил. Если cash/card = 0, нужно посмотреть структуру ответа.'
+        : 'Метод cashshifts/list вернул ошибку. Нужна авторизация или другой адрес сервера.',
+      responsePreview:
+        typeof result.rawText === 'string'
+          ? result.rawText.slice(0, 2000)
+          : '',
+      data: result.data
     });
-
   } catch (e) {
     return json(500, {
       ok: false,
