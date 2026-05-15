@@ -1,5 +1,7 @@
 // netlify/functions/iiko-report.js
 
+const crypto = require('crypto');
+
 const IIKO_RESTO_BASE = process.env.IIKO_RESTO_BASE || 'https://planeta05.iiko.it';
 const IIKO_RESTO_LOGIN = process.env.IIKO_RESTO_LOGIN || '';
 const IIKO_RESTO_PASSWORD = process.env.IIKO_RESTO_PASSWORD || '';
@@ -41,6 +43,13 @@ async function getText(url) {
   };
 }
 
+function sha1(text) {
+  return crypto
+    .createHash('sha1')
+    .update(String(text), 'utf8')
+    .digest('hex');
+}
+
 async function getRestoKey() {
   if (!IIKO_RESTO_LOGIN || !IIKO_RESTO_PASSWORD) {
     throw new Error('Нет IIKO_RESTO_LOGIN или IIKO_RESTO_PASSWORD в Netlify');
@@ -48,10 +57,13 @@ async function getRestoKey() {
 
   const base = IIKO_RESTO_BASE.replace(/\/$/, '');
 
+  // iiko RESTO API требует SHA1-хэш пароля, а не обычный пароль
+  const sha1Password = sha1(IIKO_RESTO_PASSWORD);
+
   const url =
     `${base}/resto/api/auth` +
     `?login=${encodeURIComponent(IIKO_RESTO_LOGIN)}` +
-    `&pass=${encodeURIComponent(IIKO_RESTO_PASSWORD)}`;
+    `&pass=${encodeURIComponent(sha1Password)}`;
 
   const result = await getText(url);
 
@@ -101,7 +113,10 @@ function extractPaymentTotals(obj) {
         x.paymentSystemName,
         x.paymentTypeId,
         x.kind,
-        x.paymentGroupName
+        x.paymentGroupName,
+        x.paymentGroup,
+        x.paymentSystem,
+        x.paymentKind
       ].filter(Boolean).join(' ').toLowerCase();
 
       const amount =
@@ -133,8 +148,11 @@ function extractPaymentTotals(obj) {
         }
       }
 
+      // Если iiko вернёт явные поля налички/карты
       if (Number(x.cashSum) > 0) cash += Number(x.cashSum);
       if (Number(x.cardSum) > 0) card += Number(x.cardSum);
+      if (Number(x.cash) > 0) cash += Number(x.cash);
+      if (Number(x.card) > 0) card += Number(x.card);
 
       Object.values(x).forEach(walk);
     }
