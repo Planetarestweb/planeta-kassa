@@ -653,52 +653,42 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
     <input type="hidden" id="v-bank-exp" value="0">
   </div>
 
-  <!-- Расходы наличка — по отделам -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon red">💵</div>
-      <div>
-        <div class="card-title">Расходы — Наличка</div>
-        <div class="card-sub">Продукты и прочие расходы наличкой</div>
-      </div>
-    </div>
-
-    <div class="dept-grid">
-      <div class="dept-field">
-        <div class="dept-label">🍳 Кухня</div>
-        <div class="dept-input-wrap">
-          <span class="cur-sm">₽</span>
-          <input class="dept-input" type="number" id="v-exp-kitchen" placeholder="0" oninput="updateCashExpTotal()">
-        </div>
-      </div>
-
-      <div class="dept-grid">
-  <div class="dept-field">
-    <div class="dept-label">🛒 Продукты</div>
-    <div class="dept-input-wrap">
-      <span class="cur-sm">₽</span>
-      <input class="dept-input" type="number" id="v-exp-kitchen" placeholder="0" oninput="updateCashExpTotal()">
+ <!-- Расходы наличка — продукты / прочее -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-icon red">💵</div>
+    <div>
+      <div class="card-title">Расходы — Наличка</div>
+      <div class="card-sub">Продукты и прочие расходы наличкой</div>
     </div>
   </div>
 
-  <div class="dept-field">
-    <div class="dept-label">📦 Прочее</div>
-    <div class="dept-input-wrap">
-      <span class="cur-sm">₽</span>
-      <input class="dept-input" type="number" id="v-exp-hall" placeholder="0" oninput="updateCashExpTotal()">
+  <div class="dept-grid">
+    <div class="dept-field">
+      <div class="dept-label">🛒 Продукты</div>
+      <div class="dept-input-wrap">
+        <span class="cur-sm">₽</span>
+        <input class="dept-input" type="number" id="v-exp-kitchen" placeholder="0" oninput="updateCashExpTotal()">
+      </div>
     </div>
+
+    <div class="dept-field">
+      <div class="dept-label">📦 Прочее</div>
+      <div class="dept-input-wrap">
+        <span class="cur-sm">₽</span>
+        <input class="dept-input" type="number" id="v-exp-hall" placeholder="0" oninput="updateCashExpTotal()">
+      </div>
+    </div>
+
+    <input type="hidden" id="v-exp-bar" value="0">
+    <input type="hidden" id="v-exp-tara" value="0">
   </div>
 
-  <input type="hidden" id="v-exp-bar" value="0">
-  <input type="hidden" id="v-exp-tara" value="0">
+  <div class="split-total-row" style="margin-top:10px">
+    <span>Итого расходы наличкой</span>
+    <strong id="total-cash-exp">0 ₽</strong>
+  </div>
 </div>
-
-    <div class="split-total-row" style="margin-top:10px">
-      <span>Итого расходы наличкой</span>
-      <strong id="total-cash-exp">0 ₽</strong>
-    </div>
-  </div>
-
   <!-- Зарплата -->
   <div class="card">
     <div class="card-header">
