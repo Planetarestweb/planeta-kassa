@@ -148,11 +148,17 @@ function extractPaymentTotals(obj) {
         }
       }
 
-      // Если iiko вернёт явные поля налички/карты
-      if (Number(x.cashSum) > 0) cash += Number(x.cashSum);
-      if (Number(x.cardSum) > 0) card += Number(x.cardSum);
-      if (Number(x.cash) > 0) cash += Number(x.cash);
-      if (Number(x.card) > 0) card += Number(x.card);
+      // Явные поля кассовой смены iiko
+if (Number(x.salesCash) > 0) cash += Number(x.salesCash);
+if (Number(x.salesCard) > 0) card += Number(x.salesCard);
+
+// Дополнительные возможные поля налички/карты
+if (Number(x.cashSum) > 0) cash += Number(x.cashSum);
+if (Number(x.cardSum) > 0) card += Number(x.cardSum);
+if (Number(x.cash) > 0) cash += Number(x.cash);
+if (Number(x.card) > 0) card += Number(x.card);
+
+Object.values(x).forEach(walk);
 
       Object.values(x).forEach(walk);
     }
