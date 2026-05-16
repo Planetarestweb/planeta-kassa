@@ -353,12 +353,12 @@ async function getWaitersCashFromOlap(base, key, date) {
 
   const attempts = [
     {
-      name: 'sales_waiter_paytypes_open_date',
+      name: 'sales_waiter_paytypes',
       body: {
         reportType: 'SALES',
         buildSummary: false,
-        groupByRowFields: ['OrderWaiter.Name', 'PayTypes.Name'],
-        aggregateFields: ['PayTypes.Sum'],
+        groupByRowFields: ['WaiterName', 'PayTypes'],
+        aggregateFields: ['DishDiscountSumInt'],
         filters: {
           'OpenDate.Typed': {
             filterType: 'DateRange',
@@ -370,29 +370,12 @@ async function getWaitersCashFromOlap(base, key, date) {
       }
     },
     {
-      name: 'sales_waiter_paytypes_close_date',
+      name: 'sales_waiter_paymenttype',
       body: {
         reportType: 'SALES',
         buildSummary: false,
-        groupByRowFields: ['OrderWaiter.Name', 'PayTypes.Name'],
-        aggregateFields: ['PayTypes.Sum'],
-        filters: {
-          'CloseDate.Typed': {
-            filterType: 'DateRange',
-            periodType: 'CUSTOM',
-            from: dayFrom,
-            to: dayTo
-          }
-        }
-      }
-    },
-    {
-      name: 'sales_waiter_payment_open_date',
-      body: {
-        reportType: 'SALES',
-        buildSummary: false,
-        groupByRowFields: ['Waiter.Name', 'PayTypes.Name'],
-        aggregateFields: ['PayTypes.Sum'],
+        groupByRowFields: ['WaiterName', 'PaymentType'],
+        aggregateFields: ['DishDiscountSumInt'],
         filters: {
           'OpenDate.Typed': {
             filterType: 'DateRange',
@@ -404,12 +387,46 @@ async function getWaitersCashFromOlap(base, key, date) {
       }
     },
     {
-      name: 'sales_cashier_paytypes_open_date',
+      name: 'sales_waiter_paymenttypes',
       body: {
         reportType: 'SALES',
         buildSummary: false,
-        groupByRowFields: ['Cashier.Name', 'PayTypes.Name'],
-        aggregateFields: ['PayTypes.Sum'],
+        groupByRowFields: ['WaiterName', 'PaymentTypes'],
+        aggregateFields: ['DishDiscountSumInt'],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: dayFrom,
+            to: dayTo
+          }
+        }
+      }
+    },
+    {
+      name: 'sales_waiter_payment_kind',
+      body: {
+        reportType: 'SALES',
+        buildSummary: false,
+        groupByRowFields: ['WaiterName', 'PaymentType.Kind'],
+        aggregateFields: ['DishDiscountSumInt'],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: dayFrom,
+            to: dayTo
+          }
+        }
+      }
+    },
+    {
+      name: 'sales_waiter_only',
+      body: {
+        reportType: 'SALES',
+        buildSummary: false,
+        groupByRowFields: ['WaiterName'],
+        aggregateFields: ['DishDiscountSumInt'],
         filters: {
           'OpenDate.Typed': {
             filterType: 'DateRange',
@@ -435,7 +452,7 @@ async function getWaitersCashFromOlap(base, key, date) {
       ok: result.ok,
       foundWaiters: waitersCash.length,
       body: attempt.body,
-      preview: String(result.rawText || '').slice(0, 2000)
+      preview: String(result.rawText || '').slice(0, 3000)
     });
 
     if (waitersCash.length > 0) {
@@ -450,7 +467,6 @@ async function getWaitersCashFromOlap(base, key, date) {
     }
   }
 
-  // Если не получилось, запрашиваем список колонок, чтобы понять точные названия полей
   try {
     const columnsUrl = buildUrl(base, '/resto/api/v2/reports/olap/columns', {
       key,
@@ -459,16 +475,51 @@ async function getWaitersCashFromOlap(base, key, date) {
 
     const columnsResult = await getText(columnsUrl);
 
+    let relevantColumns = [];
+
+    if (columnsResult.ok && columnsResult.data && typeof columnsResult.data === 'object') {
+      relevantColumns = Object.entries(columnsResult.data)
+        .filter(([field, meta]) => {
+          const text = [
+            field,
+            meta?.name,
+            ...(Array.isArray(meta?.tags) ? meta.tags : [])
+          ].join(' ').toLowerCase();
+
+          return (
+            text.includes('официант') ||
+            text.includes('waiter') ||
+            text.includes('кассир') ||
+            text.includes('cashier') ||
+            text.includes('оплат') ||
+            text.includes('payment') ||
+            text.includes('pay') ||
+            text.includes('налич') ||
+            text.includes('cash')
+          );
+        })
+        .map(([field, meta]) => ({
+          field,
+          name: meta?.name,
+          type: meta?.type,
+          aggregationAllowed: meta?.aggregationAllowed,
+          groupingAllowed: meta?.groupingAllowed,
+          filteringAllowed: meta?.filteringAllowed,
+          tags: meta?.tags
+        }));
+    }
+
     debug.push({
-      method: 'olap_columns_sales',
+      method: 'olap_columns_sales_relevant',
       url: hideKey(columnsUrl, key),
       status: columnsResult.status,
       ok: columnsResult.ok,
-      preview: String(columnsResult.rawText || '').slice(0, 4000)
+      relevantColumns,
+      preview: String(columnsResult.rawText || '').slice(0, 8000)
     });
   } catch (e) {
     debug.push({
-      method: 'olap_columns_sales',
+      method: 'olap_columns_sales_relevant',
       ok: false,
       error: e.message
     });
