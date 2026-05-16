@@ -488,18 +488,25 @@ function startBot() {
   }
 
   const FIELD_NAMES = {
-    restFactCash: '💵 Факт. касса ресторана',
-    expK: '🛒 Продукты',
-    expH: '📦 Прочее',
-    salary: '👥 Зарплата',
-    inkass: '💼 Инкассация',
-    bankExp: '🏦 Расч. счёт',
-    restCash: '🍽️ Ресторан наличка',
-    restCard: '🍽️ Ресторан карта',
-    clubCash: '🎠 Клуб наличка',
-    clubCard: '🎠 Клуб карта',
-    yandex: '🟡 Яндекс Еда'
-  };
+  restFactCash: '💵 Факт. касса ресторана',
+
+  expK: '🛒 Продукты',
+  expH: '📦 Прочее',
+  salary: '👥 Зарплата',
+  inkass: '💼 Инкассация',
+  bankExp: '🏦 Расч. счёт',
+
+  restCash: '🍽️ Ресторан наличка',
+  restCard: '🍽️ Ресторан карта',
+
+  banquetCash: '🎉 Банкет наличка',
+  banquetCard: '🎉 Банкет карта',
+
+  clubCash: '🎠 Клуб наличка',
+  clubCard: '🎠 Клуб карта',
+
+  yandex: '🟡 Яндекс Еда'
+};
 
   const PATTERNS = [
     [/(^|\s)(касса|факт\s*касса|фактическая\s*касса)(\s|:)/i, 'restFactCash'],
@@ -535,6 +542,21 @@ function startBot() {
     for (const line of text.split('\n')) {
       const clean = line.trim();
       if (!clean) continue;
+
+      // Банкет: "Банкет 54300" = наличка, "Банкет карта 52300" = карта
+if (/банкет/i.test(clean)) {
+  const total = sumNumbersFromLine(clean);
+
+  if (total > 0) {
+    if (/(карт|безнал)/i.test(clean)) {
+      result.banquetCard = total;
+    } else {
+      result.banquetCash = total;
+    }
+  }
+
+  continue;
+}
 
       // Продукты: можно писать "Продукты 569 237 842"
       if (/продукт/i.test(clean)) {
@@ -679,6 +701,8 @@ function startBot() {
           `• Инкассация / Руслан\n` +
           `• Расчётный счёт / Безнал\n` +
           `• Ресторан наличка / ресторан карта\n` +
+          `• Банкет наличка — например: \`Банкет 54300\`\n` +
+          `• Банкет карта — например: \`Банкет карта 52300\`\n` +
           `• Клуб наличка / клуб карта\n` +
           `• Яндекс Еда\n\n` +
           `Если упоминаешь *граммы* — это списания.\n\n` +
@@ -687,6 +711,8 @@ function startBot() {
           `*Пример сообщения:*\n` +
           `\`\`\`\n` +
           `Касса 79999\n` +
+          `Банкет 54300\n` +
+          `Банкет карта 52300\n` +
           `Продукты 569 237 842\n` +
           `Прочее 399 234 488\n` +
           `Зарплата 8000\n` +
@@ -736,6 +762,7 @@ function startBot() {
 
           const cashIn =
             (Number(d.restCash) || 0) +
+            (Number(d.banquetCash) || 0) +
             (Number(d.clubCash) || 0);
 
           const cashOut = ['expK', 'expH', 'salary', 'inkass']
