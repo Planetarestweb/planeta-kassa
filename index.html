@@ -1519,6 +1519,7 @@ async function loadShift(dateKey) {
     document.getElementById('shiftDate').value = d.date || dateKey;
     setVal('v-rest-cash', d.restCash); setVal('v-rest-card', d.restCard);
     setVal('v-rest-fact-cash', d.restFactCash);
+    renderWaitersCash(d.waitersCash || [], d.waitersCashTotal || 0, d.restCash || 0);
     updateRestFactCash();
     setVal('v-club-cash', d.clubCash); setVal('v-club-card', d.clubCard);
     setVal('v-yandex', d.yandex);
@@ -1705,6 +1706,10 @@ function calculate() {
   const restCash=v('v-rest-cash'), restCard=v('v-rest-card');
   const restFactCash = v('v-rest-fact-cash');
   updateRestFactCash();
+
+  const waitersCash = window._waitersCash || [];
+  const waitersCashTotal = window._waitersCashTotal || 0;
+  
   const clubCash=v('v-club-cash'), clubCard=v('v-club-card');
   const yandex=v('v-yandex');
   const expK=v('v-exp-kitchen'), expB=v('v-exp-bar'), expH=v('v-exp-hall'), expT=v('v-exp-tara');
@@ -1745,7 +1750,7 @@ function calculate() {
   document.getElementById('cashHighlight').classList.add('show');
   document.getElementById('excelBtn').classList.add('show');
   document.getElementById('saveShiftBtn').style.display = 'block';
-  lastCalc={restCash,restCard,restFactCash,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
+  lastCalc={restCash,restCard,restFactCash,waitersCash,waitersCashTotal,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
 }
 
 function exportExcel() {
