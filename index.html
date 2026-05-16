@@ -525,10 +525,18 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
         <input class="split-input card" type="number" id="v-rest-card" placeholder="0 ₽" oninput="updateSplitTotal('rest')">
       </div>
     </div>
+
     <div class="split-total-row">
       <span>Итого ресторан</span>
       <strong id="total-rest">0 ₽</strong>
     </div>
+
+    <div class="split-total-row" id="rest-fact-row" style="display:none">
+      <span>Фактическая сумма</span>
+      <strong id="rest-fact-result">0 ₽</strong>
+    </div>
+
+    <input type="hidden" id="v-rest-fact-cash" value="0">
   </div>
 
   <!-- Детский клуб -->
@@ -1111,9 +1119,46 @@ document.getElementById('f-club').addEventListener('change', async (e) => {
 
 // ── live totals
 function updateSplitTotal(which) {
-  const cash = parseFloat(document.getElementById(`v-${which}-cash`).value)||0;
-  const card = parseFloat(document.getElementById(`v-${which}-card`).value)||0;
+  const cash = parseFloat(document.getElementById(`v-${which}-cash`).value) || 0;
+  const card = parseFloat(document.getElementById(`v-${which}-card`).value) || 0;
+
   document.getElementById(`total-${which}`).textContent = fmt(cash + card);
+
+  if (which === 'rest') {
+    updateRestFactCash();
+  }
+}
+
+function updateRestFactCash() {
+  const fact = parseFloat(document.getElementById('v-rest-fact-cash')?.value) || 0;
+  const iikoCash = parseFloat(document.getElementById('v-rest-cash')?.value) || 0;
+
+  const row = document.getElementById('rest-fact-row');
+  const result = document.getElementById('rest-fact-result');
+
+  if (!row || !result) return;
+
+  if (fact <= 0) {
+    row.style.display = 'none';
+    result.textContent = '0 ₽';
+    result.style.color = '';
+    return;
+  }
+
+  row.style.display = 'flex';
+
+  const diff = fact - iikoCash;
+
+  if (diff === 0) {
+    result.textContent = `${fmt(fact)} — совпадает`;
+    result.style.color = 'var(--green)';
+  } else if (diff < 0) {
+    result.textContent = `${fmt(fact)} — недосдача ${fmt(Math.abs(diff))}`;
+    result.style.color = 'var(--red)';
+  } else {
+    result.textContent = `${fmt(fact)} — излишек ${fmt(diff)}`;
+    result.style.color = 'var(--orange)';
+  }
 }
 function updateBankTotal() {
   const total = [1,2,3,4].reduce((s,i) => s + (parseFloat(document.getElementById(`sup-${i}`)?.value)||0), 0);
@@ -1417,6 +1462,8 @@ async function loadShift(dateKey) {
     const setVal = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
     document.getElementById('shiftDate').value = d.date || dateKey;
     setVal('v-rest-cash', d.restCash); setVal('v-rest-card', d.restCard);
+    setVal('v-rest-fact-cash', d.restFactCash);
+    updateRestFactCash();
     setVal('v-club-cash', d.clubCash); setVal('v-club-card', d.clubCard);
     setVal('v-yandex', d.yandex);
     setVal('v-exp-kitchen', d.expK); setVal('v-exp-bar', d.expB);
@@ -1600,6 +1647,8 @@ async function loadClubFromKassa() {
 }
 function calculate() {
   const restCash=v('v-rest-cash'), restCard=v('v-rest-card');
+  const restFactCash = v('v-rest-fact-cash');
+  updateRestFactCash();
   const clubCash=v('v-club-cash'), clubCard=v('v-club-card');
   const yandex=v('v-yandex');
   const expK=v('v-exp-kitchen'), expB=v('v-exp-bar'), expH=v('v-exp-hall'), expT=v('v-exp-tara');
@@ -1640,7 +1689,7 @@ function calculate() {
   document.getElementById('cashHighlight').classList.add('show');
   document.getElementById('excelBtn').classList.add('show');
   document.getElementById('saveShiftBtn').style.display = 'block';
-  lastCalc={restCash,restCard,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
+  lastCalc={restCash,restCard,restFactCash,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
 }
 
 function exportExcel() {
