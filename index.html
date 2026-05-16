@@ -1440,6 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('planeta_prices_version', 'iiko_v1');
   }
   renderHistoryList();
+loadShift(document.getElementById('shiftDate').value);
 });
 
 // ═══ SUPABASE CONFIG ═══
@@ -1549,6 +1550,8 @@ async function loadShift(dateKey) {
     const setVal = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
     document.getElementById('shiftDate').value = d.date || dateKey;
     setVal('v-rest-cash', d.restCash); setVal('v-rest-card', d.restCard);
+    setVal('v-rest-fact-cash', d.restFactCash);
+
     setVal('v-banquet-cash', d.banquetCash); setVal('v-banquet-card', d.banquetCard);
     setVal('v-club-cash', d.clubCash); setVal('v-club-card', d.clubCard);
     renderWaitersCash(d.waitersCash || [], d.waitersCashTotal || 0, d.restCash || 0);
@@ -1572,7 +1575,7 @@ async function loadShift(dateKey) {
       });
     }
 
-    updateSplitTotal('rest'); updateSplitTotal('banquet'); updateSplitTotal('club');
+    updateSplitTotal('rest'); updateSplitTotal('banquet'); updateSplitTotal('club'); updateRestFactCash();
     updateCashExpTotal(); updateBankTotal();
     calculate();
     toggleHistory();
