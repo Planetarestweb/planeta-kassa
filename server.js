@@ -463,29 +463,52 @@ function startBot() {
   }
 
   async function supaUpsertShift(shiftDate, data) {
-    const existing = await supaGet(`shifts?shift_date=eq.${shiftDate}&select=data`);
-    const merged = existing.length ? { ...existing[0].data, ...data } : data;
+  const existing = await supaGet(`shifts?shift_date=eq.${shiftDate}&select=id,data`);
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/shifts`, {
-      method: 'POST',
+  if (existing.length) {
+    const oldData = existing[0].data || {};
+    const merged = { ...oldData, ...data };
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/shifts?shift_date=eq.${shiftDate}`, {
+      method: 'PATCH',
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=minimal'
+        Prefer: 'return=minimal'
       },
       body: JSON.stringify({
-        shift_date: shiftDate,
         data: merged
       })
     });
 
     if (!res.ok) {
-      throw new Error(`Supabase POST ${res.status}: ${await res.text()}`);
+      throw new Error(`Supabase PATCH ${res.status}: ${await res.text()}`);
     }
 
     return merged;
   }
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/shifts`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify({
+      shift_date: shiftDate,
+      data
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error(`Supabase POST ${res.status}: ${await res.text()}`);
+  }
+
+  return data;
+}
 
   const FIELD_NAMES = {
   restFactCash: '💵 Факт. касса ресторана',
