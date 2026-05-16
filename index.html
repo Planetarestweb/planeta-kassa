@@ -548,8 +548,36 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
     <strong id="waiters-cash-total">0 ₽</strong>
   </div>
 </div>
+    
+  </div>
 
-   </div>
+  <!-- Банкет -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon green">🎉</div>
+      <div>
+        <div class="card-title">Банкет</div>
+        <div class="card-sub">Данные из Telegram-бота или вручную</div>
+      </div>
+    </div>
+
+    <div class="split-row">
+      <div class="split-field">
+        <div class="split-label cash">💵 <span class="split-badge cash">НАЛИЧКА</span></div>
+        <input class="split-input cash" type="number" id="v-banquet-cash" placeholder="0 ₽" oninput="updateSplitTotal('banquet')">
+      </div>
+
+      <div class="split-field">
+        <div class="split-label card">💳 <span class="split-badge card">КАРТА</span></div>
+        <input class="split-input card" type="number" id="v-banquet-card" placeholder="0 ₽" oninput="updateSplitTotal('banquet')">
+      </div>
+    </div>
+
+    <div class="split-total-row">
+      <span>Итого банкет</span>
+      <strong id="total-banquet">0 ₽</strong>
+    </div>
+  </div>
 
   <!-- Детский клуб -->
   <div class="card">
@@ -823,6 +851,8 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
       <div class="sum-group-label">Выручка</div>
       <div class="sum-row"><span class="sum-label">🍽️ Ресторан — наличка</span><span class="sum-val pos" id="r-rest-cash">—</span></div>
       <div class="sum-row"><span class="sum-label">🍽️ Ресторан — карта</span><span class="sum-val pos" id="r-rest-card">—</span></div>
+      <div class="sum-row"><span class="sum-label">🎉 Банкет — наличка</span><span class="sum-val pos" id="r-banquet-cash">—</span></div>
+      <div class="sum-row"><span class="sum-label">🎉 Банкет — карта</span><span class="sum-val pos" id="r-banquet-card">—</span></div>
       <div class="sum-row"><span class="sum-label">🎠 Клуб — наличка</span><span class="sum-val pos" id="r-club-cash">—</span></div>
       <div class="sum-row"><span class="sum-label">🎠 Клуб — карта</span><span class="sum-val pos" id="r-club-card">—</span></div>
       <div class="sum-row"><span class="sum-label">🟡 Яндекс Еда</span><span class="sum-val pos" id="r-yandex">—</span></div>
@@ -859,6 +889,7 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
   <div class="cash-highlight" id="cashHighlight">
     <div class="cash-highlight-title">💵 Наличка в кассе на конец смены</div>
     <div class="cash-hl-row"><span class="hl-label">🍽️ Ресторан — наличка</span><span class="hl-val pos" id="ch-rest-cash">—</span></div>
+    <div class="cash-hl-row"><span class="hl-label">🎉 Банкет — наличка</span><span class="hl-val pos" id="ch-banquet-cash">—</span></div>
     <div class="cash-hl-row"><span class="hl-label">🎠 Детский клуб — наличка</span><span class="hl-val pos" id="ch-club-cash">—</span></div>
     <div class="cash-hl-row" style="padding-top:8px;margin-top:4px;border-top:1px solid rgba(62,207,122,.15)">
       <span class="hl-label" style="color:var(--text);font-weight:600">Итого пришло наличкой</span>
@@ -1518,7 +1549,8 @@ async function loadShift(dateKey) {
     const setVal = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
     document.getElementById('shiftDate').value = d.date || dateKey;
     setVal('v-rest-cash', d.restCash); setVal('v-rest-card', d.restCard);
-    setVal('v-rest-fact-cash', d.restFactCash);
+    setVal('v-banquet-cash', d.banquetCash); setVal('v-banquet-card', d.banquetCard);
+    setVal('v-club-cash', d.clubCash); setVal('v-club-card', d.clubCard);
     renderWaitersCash(d.waitersCash || [], d.waitersCashTotal || 0, d.restCash || 0);
     updateRestFactCash();
     setVal('v-club-cash', d.clubCash); setVal('v-club-card', d.clubCard);
@@ -1540,7 +1572,7 @@ async function loadShift(dateKey) {
       });
     }
 
-    updateSplitTotal('rest'); updateSplitTotal('club');
+    updateSplitTotal('rest'); updateSplitTotal('banquet'); updateSplitTotal('club');
     updateCashExpTotal(); updateBankTotal();
     calculate();
     toggleHistory();
@@ -1704,6 +1736,7 @@ async function loadClubFromKassa() {
 }
 function calculate() {
   const restCash=v('v-rest-cash'), restCard=v('v-rest-card');
+  const banquetCash=v('v-banquet-cash'), banquetCard=v('v-banquet-card');
   const restFactCash = v('v-rest-fact-cash');
   updateRestFactCash();
 
@@ -1724,13 +1757,14 @@ function calculate() {
   const sup2name=document.getElementById('sup-name-2')?.value||'Поставщик 2';
   const sup3name=document.getElementById('sup-name-3')?.value||'Поставщик 3';
   const sup4name=document.getElementById('sup-name-4')?.value||'Поставщик 4';
-  const totalRev=restCash+restCard+clubCash+clubCard+yandex;
+  const totalRev=restCash+restCard+banquetCash+banquetCard+clubCash+clubCard+yandex;
   const totalExp=totalCashExp+bankExp+salary;
-  const totalCashIn=restCash+clubCash;
+  const totalCashIn=restCash+banquetCash+clubCash;
   const cashBalance=totalCashIn-totalCashExp-salary-inkass;
 
   const set=(id,val,sign='')=>{const el=document.getElementById(id);if(el)el.textContent=sign+fmt(val);};
   set('r-rest-cash',restCash); set('r-rest-card',restCard);
+  set('r-banquet-cash',banquetCash); set('r-banquet-card',banquetCard);
   set('r-club-cash',clubCash); set('r-club-card',clubCard);
   set('r-yandex',yandex); set('r-total-revenue',totalRev);
   set('r-exp-kitchen',expK,'−'); set('r-exp-bar',expB,'−');
@@ -1738,7 +1772,9 @@ function calculate() {
   set('r-bank-exp',bankExp,'−'); set('r-salary',salary,'−');
   set('r-total-expenses',totalExp,'−');
   set('r-writeoff',totalWriteoff); set('r-inkass',inkass,'−');
-  set('ch-rest-cash',restCash); set('ch-club-cash',clubCash);
+  set('ch-rest-cash',restCash);
+  set('ch-banquet-cash',banquetCash);
+  set('ch-club-cash',clubCash);
   set('ch-total-in',totalCashIn);
   set('ch-exp-kitchen',expK,'−'); set('ch-exp-bar',expB,'−');
   set('ch-exp-hall',expH,'−'); set('ch-exp-tara',expT,'−');
@@ -1750,7 +1786,7 @@ function calculate() {
   document.getElementById('cashHighlight').classList.add('show');
   document.getElementById('excelBtn').classList.add('show');
   document.getElementById('saveShiftBtn').style.display = 'block';
-  lastCalc={restCash,restCard,restFactCash,waitersCash,waitersCashTotal,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
+  lastCalc={restCash,restCard,restFactCash,waitersCash,waitersCashTotal,banquetCash,banquetCard,clubCash,clubCard,yandex,totalRev,expK,expB,expH,expT,totalCashExp,bankExp,salary,totalExp,inkass,totalWriteoff,totalCashIn,cashBalance,sup1,sup2,sup3,sup4,sup1name,sup2name,sup3name,sup4name,woText,date:document.getElementById('shiftDate').value,notes:document.getElementById('notes').value};
 }
 
 function exportExcel() {
