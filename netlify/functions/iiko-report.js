@@ -344,8 +344,12 @@ function parseWaitersFromOlap(data) {
 }
 
 async function getWaitersCashFromOlap(base, key, date) {
-  const dayFrom = `${date}T00:00:00`;
-  const dayTo = `${date}T23:59:59`;
+  const dayFrom = date;
+
+const nextDayDate = new Date(date + 'T00:00:00Z');
+nextDayDate.setUTCDate(nextDayDate.getUTCDate() + 1);
+
+const dayTo = nextDayDate.toISOString().slice(0, 10);
 
   const url = buildUrl(base, '/resto/api/v2/reports/olap', {
     key
