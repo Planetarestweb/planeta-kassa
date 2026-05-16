@@ -537,7 +537,19 @@ main { padding: 18px 16px 100px; max-width: 600px; margin: 0 auto; }
     </div>
 
     <input type="hidden" id="v-rest-fact-cash" value="0">
+
+    <div id="waiters-cash-box" style="display:none;margin-top:10px">
+  <div class="sum-group-label" style="margin-bottom:8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">
+    💵 Кто сколько должен сдать налички
   </div>
+  <div id="waiters-cash-rows"></div>
+  <div class="split-total-row" style="margin-top:8px">
+    <span>Итого по официантам</span>
+    <strong id="waiters-cash-total">0 ₽</strong>
+  </div>
+</div>
+
+   </div>
 
   <!-- Детский клуб -->
   <div class="card">
@@ -906,6 +918,8 @@ async function loadFromIiko() {
     document.getElementById('v-rest-card').value = card;
     updateSplitTotal('rest');
 
+    renderWaitersCash(data.waitersCash || [], data.waitersCashTotal || 0, cash);
+
     st.className = 'ai-status ok';
     st.textContent = `✅ Из iiko: наличка ${fmt(cash)}, карта ${fmt(card)} — проверь`;
   } catch (e) {
@@ -1158,6 +1172,48 @@ function updateRestFactCash() {
   } else {
     result.textContent = `${fmt(fact)} — излишек ${fmt(diff)}`;
     result.style.color = 'var(--orange)';
+  }
+}
+    function renderWaitersCash(waitersCash = [], waitersCashTotal = 0, iikoCash = 0) {
+  const box = document.getElementById('waiters-cash-box');
+  const rowsEl = document.getElementById('waiters-cash-rows');
+  const totalEl = document.getElementById('waiters-cash-total');
+
+  if (!box || !rowsEl || !totalEl) return;
+
+  if (!Array.isArray(waitersCash) || waitersCash.length === 0) {
+    box.style.display = 'none';
+    rowsEl.innerHTML = '';
+    totalEl.textContent = '0 ₽';
+    window._waitersCash = [];
+    window._waitersCashTotal = 0;
+    return;
+  }
+
+  window._waitersCash = waitersCash;
+  window._waitersCashTotal = waitersCashTotal;
+
+  box.style.display = 'block';
+  rowsEl.innerHTML = '';
+
+  waitersCash.forEach(w => {
+    const row = document.createElement('div');
+    row.className = 'wo-row';
+    row.innerHTML = `
+      <span class="wo-name">${w.name}</span>
+      <span class="wo-sum" style="color:var(--green)">${fmt(Number(w.cash) || 0)}</span>
+    `;
+    rowsEl.appendChild(row);
+  });
+
+  const diff = Math.round((Number(waitersCashTotal) || 0) - (Number(iikoCash) || 0));
+
+  if (diff === 0) {
+    totalEl.textContent = `${fmt(waitersCashTotal)} — совпадает`;
+    totalEl.style.color = 'var(--green)';
+  } else {
+    totalEl.textContent = `${fmt(waitersCashTotal)} — разница ${fmt(Math.abs(diff))}`;
+    totalEl.style.color = 'var(--red)';
   }
 }
 function updateBankTotal() {
