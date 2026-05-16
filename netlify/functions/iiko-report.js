@@ -50,6 +50,34 @@ async function getText(url) {
   };
 }
 
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json,text/plain,*/*',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  const text = await res.text();
+
+  let data;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { raw: text };
+  }
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    data,
+    rawText: text
+  };
+}
+
 function hideKey(url, key) {
   return String(url).replace(encodeURIComponent(key), '***KEY_HIDDEN***');
 }
@@ -252,7 +280,8 @@ function parseWaitersFromOlap(data) {
         'Waiter',
         'User.Name',
         'Cashier.Name',
-        'Employee.Name'
+        'Employee.Name',
+        'Delivery.Customer.Name'
       ],
       ['waiter', 'официант', 'employee', 'cashier', 'user']
     );
@@ -292,7 +321,8 @@ function parseWaitersFromOlap(data) {
         'Amount',
         'amount',
         'Revenue',
-        'revenue'
+        'revenue',
+        'DishDiscountSumInt'
       ],
       ['sum', 'amount', 'revenue', 'выруч', 'сумм']
     );
@@ -317,38 +347,77 @@ async function getWaitersCashFromOlap(base, key, date) {
   const dayFrom = `${date}T00:00:00`;
   const dayTo = `${date}T23:59:59`;
 
+  const url = buildUrl(base, '/resto/api/v2/reports/olap', {
+    key
+  });
+
   const attempts = [
     {
-      name: 'olap_sales_waiter_paytypes_1',
-      params: {
-        key,
-        report: 'SALES',
-        from: dayFrom,
-        to: dayTo,
-        groupRow: ['OrderWaiter.Name', 'PayTypes.Name'],
-        aggregateField: ['PayTypes.Sum']
+      name: 'sales_waiter_paytypes_open_date',
+      body: {
+        reportType: 'SALES',
+        buildSummary: false,
+        groupByRowFields: ['OrderWaiter.Name', 'PayTypes.Name'],
+        aggregateFields: ['PayTypes.Sum'],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: dayFrom,
+            to: dayTo
+          }
+        }
       }
     },
     {
-      name: 'olap_sales_waiter_paytypes_2',
-      params: {
-        key,
-        report: 'SALES',
-        from: dayFrom,
-        to: dayTo,
-        groupRow: ['Waiter.Name', 'PayTypes.Name'],
-        aggregateField: ['PayTypes.Sum']
+      name: 'sales_waiter_paytypes_close_date',
+      body: {
+        reportType: 'SALES',
+        buildSummary: false,
+        groupByRowFields: ['OrderWaiter.Name', 'PayTypes.Name'],
+        aggregateFields: ['PayTypes.Sum'],
+        filters: {
+          'CloseDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: dayFrom,
+            to: dayTo
+          }
+        }
       }
     },
     {
-      name: 'olap_sales_waiter_payment_3',
-      params: {
-        key,
-        report: 'SALES',
-        from: dayFrom,
-        to: dayTo,
-        groupRow: ['OrderWaiter.Name', 'PaymentTypes.Name'],
-        aggregateField: ['PaymentTypes.Sum']
+      name: 'sales_waiter_payment_open_date',
+      body: {
+        reportType: 'SALES',
+        buildSummary: false,
+        groupByRowFields: ['Waiter.Name', 'PayTypes.Name'],
+        aggregateFields: ['PayTypes.Sum'],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: dayFrom,
+            to: dayTo
+          }
+        }
+      }
+    },
+    {
+      name: 'sales_cashier_paytypes_open_date',
+      body: {
+        reportType: 'SALES',
+        buildSummary: false,
+        groupByRowFields: ['Cashier.Name', 'PayTypes.Name'],
+        aggregateFields: ['PayTypes.Sum'],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: dayFrom,
+            to: dayTo
+          }
+        }
       }
     }
   ];
@@ -356,9 +425,7 @@ async function getWaitersCashFromOlap(base, key, date) {
   const debug = [];
 
   for (const attempt of attempts) {
-    const url = buildUrl(base, '/resto/api/v2/reports/olap', attempt.params);
-    const result = await getText(url);
-
+    const result = await postJson(url, attempt.body);
     const waitersCash = result.ok ? parseWaitersFromOlap(result.data) : [];
 
     debug.push({
@@ -367,7 +434,8 @@ async function getWaitersCashFromOlap(base, key, date) {
       status: result.status,
       ok: result.ok,
       foundWaiters: waitersCash.length,
-      preview: String(result.rawText || '').slice(0, 1500)
+      body: attempt.body,
+      preview: String(result.rawText || '').slice(0, 2000)
     });
 
     if (waitersCash.length > 0) {
@@ -386,7 +454,7 @@ async function getWaitersCashFromOlap(base, key, date) {
   try {
     const columnsUrl = buildUrl(base, '/resto/api/v2/reports/olap/columns', {
       key,
-      report: 'SALES'
+      reportType: 'SALES'
     });
 
     const columnsResult = await getText(columnsUrl);
@@ -396,7 +464,7 @@ async function getWaitersCashFromOlap(base, key, date) {
       url: hideKey(columnsUrl, key),
       status: columnsResult.status,
       ok: columnsResult.ok,
-      preview: String(columnsResult.rawText || '').slice(0, 3000)
+      preview: String(columnsResult.rawText || '').slice(0, 4000)
     });
   } catch (e) {
     debug.push({
