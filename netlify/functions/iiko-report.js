@@ -17,6 +17,13 @@ function json(statusCode, body) {
   };
 }
 
+function sha1(text) {
+  return crypto
+    .createHash('sha1')
+    .update(String(text), 'utf8')
+    .digest('hex');
+}
+
 async function getText(url) {
   const res = await fetch(url, {
     method: 'GET',
@@ -43,11 +50,22 @@ async function getText(url) {
   };
 }
 
-function sha1(text) {
-  return crypto
-    .createHash('sha1')
-    .update(String(text), 'utf8')
-    .digest('hex');
+function hideKey(url, key) {
+  return String(url).replace(encodeURIComponent(key), '***KEY_HIDDEN***');
+}
+
+function buildUrl(base, path, params) {
+  const url = new URL(path, base);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(v => url.searchParams.append(key, v));
+    } else if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  return url.toString();
 }
 
 async function getRestoKey() {
@@ -56,8 +74,6 @@ async function getRestoKey() {
   }
 
   const base = IIKO_RESTO_BASE.replace(/\/$/, '');
-
-  // iiko RESTO API требует SHA1-хэш пароля, а не обычный пароль
   const sha1Password = sha1(IIKO_RESTO_PASSWORD);
 
   const url =
@@ -149,16 +165,14 @@ function extractPaymentTotals(obj) {
       }
 
       // Явные поля кассовой смены iiko
-if (Number(x.salesCash) > 0) cash += Number(x.salesCash);
-if (Number(x.salesCard) > 0) card += Number(x.salesCard);
+      if (Number(x.salesCash) > 0) cash += Number(x.salesCash);
+      if (Number(x.salesCard) > 0) card += Number(x.salesCard);
 
-// Дополнительные возможные поля налички/карты
-if (Number(x.cashSum) > 0) cash += Number(x.cashSum);
-if (Number(x.cardSum) > 0) card += Number(x.cardSum);
-if (Number(x.cash) > 0) cash += Number(x.cash);
-if (Number(x.card) > 0) card += Number(x.card);
-
-Object.values(x).forEach(walk);
+      // Дополнительные возможные поля налички/карты
+      if (Number(x.cashSum) > 0) cash += Number(x.cashSum);
+      if (Number(x.cardSum) > 0) card += Number(x.cardSum);
+      if (Number(x.cash) > 0) cash += Number(x.cash);
+      if (Number(x.card) > 0) card += Number(x.card);
 
       Object.values(x).forEach(walk);
     }
@@ -172,6 +186,234 @@ Object.values(x).forEach(walk);
   };
 }
 
+function normalizeRows(data) {
+  if (!data) return [];
+
+  if (Array.isArray(data)) return data;
+
+  if (Array.isArray(data.data)) return data.data;
+  if (Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.result)) return data.result;
+
+  return [];
+}
+
+function pickValue(row, exactKeys, includesKeys = []) {
+  if (!row || typeof row !== 'object') return null;
+
+  for (const key of exactKeys) {
+    if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+      return row[key];
+    }
+  }
+
+  const entries = Object.entries(row);
+
+  for (const [key, value] of entries) {
+    const lowKey = String(key).toLowerCase();
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== '' &&
+      includesKeys.some(part => lowKey.includes(part.toLowerCase()))
+    ) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function toNum(value) {
+  if (value === undefined || value === null || value === '') return 0;
+
+  if (typeof value === 'number') return value;
+
+  const cleaned = String(value)
+    .replace(/\s/g, '')
+    .replace(',', '.')
+    .replace(/[^\d.-]/g, '');
+
+  return Number(cleaned) || 0;
+}
+
+function parseWaitersFromOlap(data) {
+  const rows = normalizeRows(data);
+  const map = new Map();
+
+  for (const row of rows) {
+    const waiterRaw = pickValue(
+      row,
+      [
+        'OrderWaiter.Name',
+        'OrderWaiter',
+        'Waiter.Name',
+        'Waiter',
+        'User.Name',
+        'Cashier.Name',
+        'Employee.Name'
+      ],
+      ['waiter', 'официант', 'employee', 'cashier', 'user']
+    );
+
+    const paymentRaw = pickValue(
+      row,
+      [
+        'PayTypes.Name',
+        'PaymentTypes.Name',
+        'PaymentType.Name',
+        'PaymentType',
+        'Payment',
+        'PayType'
+      ],
+      ['paytype', 'payment', 'оплат', 'платеж']
+    );
+
+    const payText = String(paymentRaw || '').toLowerCase();
+
+    const isCash =
+      payText.includes('cash') ||
+      payText.includes('нал') ||
+      payText.includes('налич');
+
+    if (!isCash) continue;
+
+    const amountRaw = pickValue(
+      row,
+      [
+        'PayTypes.Sum',
+        'PaymentTypes.Sum',
+        'Payment.Sum',
+        'PaymentSum',
+        'PaySum',
+        'Sum',
+        'sum',
+        'Amount',
+        'amount',
+        'Revenue',
+        'revenue'
+      ],
+      ['sum', 'amount', 'revenue', 'выруч', 'сумм']
+    );
+
+    const amount = toNum(amountRaw);
+
+    if (amount <= 0) continue;
+
+    const waiter = String(waiterRaw || 'Без официанта').trim() || 'Без официанта';
+    map.set(waiter, (map.get(waiter) || 0) + amount);
+  }
+
+  return Array.from(map.entries())
+    .map(([name, cash]) => ({
+      name,
+      cash: Math.round(cash)
+    }))
+    .sort((a, b) => b.cash - a.cash);
+}
+
+async function getWaitersCashFromOlap(base, key, date) {
+  const dayFrom = `${date}T00:00:00`;
+  const dayTo = `${date}T23:59:59`;
+
+  const attempts = [
+    {
+      name: 'olap_sales_waiter_paytypes_1',
+      params: {
+        key,
+        report: 'SALES',
+        from: dayFrom,
+        to: dayTo,
+        groupRow: ['OrderWaiter.Name', 'PayTypes.Name'],
+        aggregateField: ['PayTypes.Sum']
+      }
+    },
+    {
+      name: 'olap_sales_waiter_paytypes_2',
+      params: {
+        key,
+        report: 'SALES',
+        from: dayFrom,
+        to: dayTo,
+        groupRow: ['Waiter.Name', 'PayTypes.Name'],
+        aggregateField: ['PayTypes.Sum']
+      }
+    },
+    {
+      name: 'olap_sales_waiter_payment_3',
+      params: {
+        key,
+        report: 'SALES',
+        from: dayFrom,
+        to: dayTo,
+        groupRow: ['OrderWaiter.Name', 'PaymentTypes.Name'],
+        aggregateField: ['PaymentTypes.Sum']
+      }
+    }
+  ];
+
+  const debug = [];
+
+  for (const attempt of attempts) {
+    const url = buildUrl(base, '/resto/api/v2/reports/olap', attempt.params);
+    const result = await getText(url);
+
+    const waitersCash = result.ok ? parseWaitersFromOlap(result.data) : [];
+
+    debug.push({
+      method: attempt.name,
+      url: hideKey(url, key),
+      status: result.status,
+      ok: result.ok,
+      foundWaiters: waitersCash.length,
+      preview: String(result.rawText || '').slice(0, 1500)
+    });
+
+    if (waitersCash.length > 0) {
+      const total = waitersCash.reduce((s, w) => s + (Number(w.cash) || 0), 0);
+
+      return {
+        ok: true,
+        waitersCash,
+        waitersCashTotal: Math.round(total),
+        olapDebug: debug
+      };
+    }
+  }
+
+  // Если не получилось, запрашиваем список колонок, чтобы понять точные названия полей
+  try {
+    const columnsUrl = buildUrl(base, '/resto/api/v2/reports/olap/columns', {
+      key,
+      report: 'SALES'
+    });
+
+    const columnsResult = await getText(columnsUrl);
+
+    debug.push({
+      method: 'olap_columns_sales',
+      url: hideKey(columnsUrl, key),
+      status: columnsResult.status,
+      ok: columnsResult.ok,
+      preview: String(columnsResult.rawText || '').slice(0, 3000)
+    });
+  } catch (e) {
+    debug.push({
+      method: 'olap_columns_sales',
+      ok: false,
+      error: e.message
+    });
+  }
+
+  return {
+    ok: false,
+    waitersCash: [],
+    waitersCashTotal: 0,
+    olapDebug: debug
+  };
+}
+
 exports.handler = async (event) => {
   try {
     const date =
@@ -181,32 +423,52 @@ exports.handler = async (event) => {
     const base = IIKO_RESTO_BASE.replace(/\/$/, '');
     const key = await getRestoKey();
 
-    const url =
+    const cashShiftsUrl =
       `${base}/resto/api/v2/cashshifts/list` +
       `?key=${encodeURIComponent(key)}` +
       `&openDateFrom=${encodeURIComponent(date)}` +
       `&openDateTo=${encodeURIComponent(date)}` +
       `&status=ANY`;
 
-    const result = await getText(url);
-    const totals = extractPaymentTotals(result.data);
+    const cashShiftsResult = await getText(cashShiftsUrl);
+    const totals = extractPaymentTotals(cashShiftsResult.data);
+
+    let waitersResult = {
+      ok: false,
+      waitersCash: [],
+      waitersCashTotal: 0,
+      olapDebug: []
+    };
+
+    if (cashShiftsResult.ok) {
+      waitersResult = await getWaitersCashFromOlap(base, key, date);
+    }
 
     return json(200, {
-      ok: result.ok,
+      ok: cashShiftsResult.ok,
       date,
-      url: url.replace(encodeURIComponent(key), '***KEY_HIDDEN***'),
-      status: result.status,
-      statusText: result.statusText,
+      url: hideKey(cashShiftsUrl, key),
+      status: cashShiftsResult.status,
+      statusText: cashShiftsResult.statusText,
+
       cash: totals.cash,
       card: totals.card,
-      message: result.ok
-        ? 'Авторизация прошла, cashshifts/list ответил.'
+
+      waitersCash: waitersResult.waitersCash,
+      waitersCashTotal: waitersResult.waitersCashTotal,
+      waitersCashOk: waitersResult.ok,
+      olapDebug: waitersResult.olapDebug,
+
+      message: cashShiftsResult.ok
+        ? 'Авторизация прошла, cashshifts/list ответил. OLAP по официантам смотри в waitersCash / olapDebug.'
         : 'Авторизация прошла, но cashshifts/list вернул ошибку.',
+
       responsePreview:
-        typeof result.rawText === 'string'
-          ? result.rawText.slice(0, 2000)
+        typeof cashShiftsResult.rawText === 'string'
+          ? cashShiftsResult.rawText.slice(0, 2000)
           : '',
-      data: result.data
+
+      data: cashShiftsResult.data
     });
   } catch (e) {
     return json(500, {
